@@ -78,18 +78,28 @@ enve_test <- data.frame(extortions=as.integer(as.character(enve_all$P26_10)))
 
 enve_test$extortion_victim <- enve_all$P25_10
 enve_test$extortions[enve_test$extortion_victim == 2] <- 0
+
 summary(enve_test$extortions)
 table(enve_test$extortions)
 
-enve_test$extortion_victim
+enve_test$extortions_nas <- enve_test$extortions
+enve_test$extortions[is.na(enve_test$extortions)] <- 0
+
+summary(enve_test$extortions)
+table(enve_test$extortions)
+
+levels(enve_test$extortion_victim) <- c("yes", "no", "dk")
+enve_test$extortion_victim <- relevel(enve_test$extortion_victim, ref = "no")
+summary(enve_test)
 ```
 
-enve_test$CVE_UNICA <- as.integer(as.character(enve_all$ID_CONSECU))
+
+
+```{r bribes-variable-selection}
 
 enve_test$bribes <- as.integer(as.character(enve_all$P33))
 summary(enve_test$bribes)
 
-enve_test$bribes2 <- as.integer(as.character(enve_all$P33))
 
 # 4 bribe cats
 enve_test$bribe1 <- enve_all$P29_1
@@ -110,13 +120,40 @@ bribecols <- c("bribe1",
                "bribe3",
                "bribe4")
 
-#bribe_col_test <- bribecols %in% names(enve_test)
+summary(enve_test$bribes)
+
+enve_test$bribe_victim[enve_test$bribes > 0] <- 1
+enve_test$bribe_victim[with(enve_test,
+                        bribe1 == 2 &
+                        bribe2 == 2 &
+                        bribe3 == 2 &
+                        bribe4 == 2)] <- 0
+
+enve_test$bribe_victim[with(enve_test,
+                        bribe1 == 9 &
+                        bribe2 == 9 &
+                        bribe3 == 9 &
+                        bribe4 == 9)] <- 9
+
+enve_test %>%
+    mutate(bribe_victim = as.factor(bribe_victim)) -> enve_test
+
+levels(enve_test$bribe_victim) <- c("no", "yes", "dk")
 
 colindbribe <- which(names(enve_test) %in% bribecols)
 
-colindbribe
-
 enve_test <- enve_test[,-colindbribe]
+
+enve_test$bribes_nas <- enve_test$bribes
+
+enve_test$bribes[is.na(enve_test$bribes)] <- 0
+
+
+summary(enve_test)
+```
+
+```
+enve_test$CVE_UNICA <- as.integer(as.character(enve_all$ID_CONSECU))
 
 enve_test$CVE_ENT <- as.integer(as.character(enve_all$CVE_ENT))
 
