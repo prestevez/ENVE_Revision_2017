@@ -186,7 +186,7 @@ intyears <- classIntervals(enve_test$years, 5, style="quantile")
 enve_test$yearsquant <- cut(enve_test$years, intyears$brks, right=TRUE,
                             include.lowest = TRUE)
 
-enve_test <- merge(enve_test, homicidios, by="CVE_ENT", all.x=TRUE)
+enve_test <- merge(enve_test, area_level, by="CVE_ENT", all.x=TRUE)
 
 length(enve_test$extortions[is.na(enve_test$extortions)])
 length(enve_test$bribes[is.na(enve_test$bribes)])
