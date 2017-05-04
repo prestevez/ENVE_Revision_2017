@@ -17,3 +17,161 @@ knitr::opts_chunk$set(echo = TRUE,
                       error=TRUE)
 ```
 
+# Introduction
+
+Script to analyze patterns of extortion victimization against Mexican businesses.
+
+# Set up, data input and pre-process
+
+## Session info
+
+We first check details of the session and system, and for reproducibility, we set the random seed.
+
+```{r session, cache=FALSE}
+starttime <- proc.time()
+date()
+sessionInfo()
+set.seed(42)
+options(scipen=0)
+```
+
+## Load packages and functions
+
+Next we load the packages that we will use.
+
+```{r packages}
+library(foreign)
+library(ggplot2)
+library(Cairo)
+library(knitr)
+library(texreg)
+library(lme4)
+library(glmmADMB)
+library(classInt)
+library(dplyr)
+```
+
+
+```{r import-data}
+enve_all <- read.dbf("enve2014cuest_ciega_2014.dbf")
+cat_entidades <- read.csv("cat_entidades.csv", head=TRUE)
+area_level_tmp <- read.csv("state_level_data.csv", header=TRUE)
+area_level <- merge(area_level_tmp, cat_entidades, by="CVE_ENT", all.x=TRUE)
+scode <- read.csv("secode.csv", head=TRUE)
+scode$Code <- scode$Code*10000
+```
+
+
+Quick overview of all the variables in the dataset
+
+```{r overview-all}
+
+summary(enve_all)
+
+```
+
+Now select only the relevant variables
+
+```{r extortion-variable-selection}
+
+enve_test <- data.frame(extortions=as.integer(as.character(enve_all$P26_10)))
+
+enve_test$extortion_victim <- enve_all$P25_10
+enve_test$extortions[enve_test$extortion_victim == 2] <- 0
+summary(enve_test$extortions)
+table(enve_test$extortions)
+
+enve_test$extortion_victim
+```
+
+enve_test$CVE_UNICA <- as.integer(as.character(enve_all$ID_CONSECU))
+
+enve_test$bribes <- as.integer(as.character(enve_all$P33))
+summary(enve_test$bribes)
+
+enve_test$bribes2 <- as.integer(as.character(enve_all$P33))
+
+# 4 bribe cats
+enve_test$bribe1 <- enve_all$P29_1
+enve_test$bribe2 <- enve_all$P30_1
+enve_test$bribe3 <- enve_all$P31_1
+enve_test$bribe4 <- enve_all$P32_1
+
+enve_test$bribes[with(enve_test,
+                        bribe1 == 2 &
+                        bribe2 == 2 &
+                        bribe3 == 2 &
+                        bribe4 == 2)] <- 0
+
+summary(enve_test$bribes)
+
+bribecols <- c("bribe1",
+               "bribe2",
+               "bribe3",
+               "bribe4")
+
+#bribe_col_test <- bribecols %in% names(enve_test)
+
+colindbribe <- which(names(enve_test) %in% bribecols)
+
+colindbribe
+
+enve_test <- enve_test[,-colindbribe]
+
+enve_test$CVE_ENT <- as.integer(as.character(enve_all$CVE_ENT))
+
+enve_test$size <- enve_all$ID_ESTRATO
+levels(enve_test$size) <- c("Large", "Medium", "Small", "Micro")
+
+enve_test$sector <- enve_all$SECTOR_FIN
+
+# subsector
+enve_test$tempsub <- as.integer(as.character(enve_all$P1_1B))
+enve_test$subsector <- cut(enve_test$tempsub, scode$Code, right=FALSE)
+levels(enve_test$subsector) <- scode$Sector
+enve_test$subsector <- droplevels(enve_test$subsector)
+enve_test$subsector <- relevel(enve_test$subsector, ref="Retail")
+levels(enve_test$subsector)
+
+
+enve_test$hotrestbar <- enve_test$subsector
+hotindx <- which(levels(enve_test$hotrestbar) == "HotelsRestBar")
+levels(enve_test$hotrestbar)[-hotindx] <- 0
+levels(enve_test$hotrestbar) <- c(0,1)
+
+enve_test$years <- 2013 - as.numeric(as.character(enve_all$P3))
+intyears <- classIntervals(enve_test$years, 5, style="quantile")
+enve_test$yearsquant <- cut(enve_test$years, intyears$brks, right=TRUE,
+                            include.lowest = TRUE)
+
+enve_test <- merge(enve_test, homicidios, by="CVE_ENT", all.x=TRUE)
+
+length(enve_test$extortions[is.na(enve_test$extortions)])
+length(enve_test$bribes[is.na(enve_test$bribes)])
+
+summary(enve_test)
+
+summary(enve_test$bribes2)
+
+enve_test$bribes2[is.na(enve_test$bribes2)] <- 0
+summary(enve_test$bribes2)
+
+
+colind <- which(names(enve_test)=="bribes")
+
+enve_test2 <- enve_test[,-colind]
+
+summary(enve_test2)
+
+
+enve_test3 <- enve_test2
+
+enve_test3$extortions[is.na(enve_test$extortions)] <- 0
+
+summary(enve_test3)
+
+```
+
+
+
+
