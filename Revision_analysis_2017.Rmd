@@ -1,0 +1,19 @@
+---
+title: "Repeat extortion of Mexican businesses: Revision analysis"
+author: "Patricio R. Estevez Soto"
+email: "patricio.estevez.14@ucl.ac.uk"
+date: "4/05/2016"
+output:
+  md_document:
+    variant: "markdown"
+pandoc_args: "--smart"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      comment="",
+                      cache=TRUE,
+                      dev=c("png", "CairoPDF"),
+                      error=TRUE)
+```
+

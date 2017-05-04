@@ -1,0 +1,15 @@
+# R session stuff
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Test databases
+*.dbf
+
+# Directories
+results/
+test_data/
+cache/
+drafts_notes/
