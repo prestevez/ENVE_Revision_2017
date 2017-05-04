@@ -72,7 +72,7 @@ summary(enve_all)
 
 Now select only the relevant variables
 
-```{r extortion-variable-selection}
+```{r extortion-variables-selection}
 
 enve_test <- data.frame(extortions=as.integer(as.character(enve_all$P26_10)))
 
@@ -95,7 +95,7 @@ summary(enve_test)
 
 
 
-```{r bribes-variable-selection}
+```{r bribes-variables-selection}
 
 enve_test$bribes <- as.integer(as.character(enve_all$P33))
 summary(enve_test$bribes)
@@ -112,13 +112,6 @@ enve_test$bribes[with(enve_test,
                         bribe2 == 2 &
                         bribe3 == 2 &
                         bribe4 == 2)] <- 0
-
-summary(enve_test$bribes)
-
-bribecols <- c("bribe1",
-               "bribe2",
-               "bribe3",
-               "bribe4")
 
 summary(enve_test$bribes)
 
@@ -140,6 +133,11 @@ enve_test %>%
 
 levels(enve_test$bribe_victim) <- c("no", "yes", "dk")
 
+bribecols <- c("bribe1",
+               "bribe2",
+               "bribe3",
+               "bribe4")
+
 colindbribe <- which(names(enve_test) %in% bribecols)
 
 enve_test <- enve_test[,-colindbribe]
@@ -152,7 +150,7 @@ enve_test$bribes[is.na(enve_test$bribes)] <- 0
 summary(enve_test)
 ```
 
-```
+```{r other-variables-selection}
 enve_test$CVE_UNICA <- as.integer(as.character(enve_all$ID_CONSECU))
 
 enve_test$CVE_ENT <- as.integer(as.character(enve_all$CVE_ENT))
@@ -170,11 +168,18 @@ enve_test$subsector <- droplevels(enve_test$subsector)
 enve_test$subsector <- relevel(enve_test$subsector, ref="Retail")
 levels(enve_test$subsector)
 
+### To exclude the subsectors with very few observations
 
-enve_test$hotrestbar <- enve_test$subsector
-hotindx <- which(levels(enve_test$hotrestbar) == "HotelsRestBar")
-levels(enve_test$hotrestbar)[-hotindx] <- 0
-levels(enve_test$hotrestbar) <- c(0,1)
+# summary(enve_test)
+# nrow(enve_test)
+# enve_test %>%
+#     filter(subsector != "Utilities") %>%
+#     filter(subsector != "Corporate") -> enve_test_2
+# 
+# enve_test_2$subsector <- droplevels(enve_test_2$subsector)
+# 
+# levels(enve_test_2$subsector)
+# nrow(enve_test_2)
 
 enve_test$years <- 2013 - as.numeric(as.character(enve_all$P3))
 intyears <- classIntervals(enve_test$years, 5, style="quantile")
@@ -186,26 +191,8 @@ enve_test <- merge(enve_test, homicidios, by="CVE_ENT", all.x=TRUE)
 length(enve_test$extortions[is.na(enve_test$extortions)])
 length(enve_test$bribes[is.na(enve_test$bribes)])
 
+## Summary of final dataset
 summary(enve_test)
-
-summary(enve_test$bribes2)
-
-enve_test$bribes2[is.na(enve_test$bribes2)] <- 0
-summary(enve_test$bribes2)
-
-
-colind <- which(names(enve_test)=="bribes")
-
-enve_test2 <- enve_test[,-colind]
-
-summary(enve_test2)
-
-
-enve_test3 <- enve_test2
-
-enve_test3$extortions[is.na(enve_test$extortions)] <- 0
-
-summary(enve_test3)
 
 ```
 
