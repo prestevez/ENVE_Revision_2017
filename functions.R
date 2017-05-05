@@ -50,6 +50,7 @@ format.ftables.tst <- function(ftables_list)
     
     results.df %>%
         mutate(s=make_stars(pval=p.value)) -> results.df
+    rownames(results.df) <- names(ftables_list)
     
     return(results.df)
 }
@@ -76,7 +77,7 @@ print_freqtst <- function(formated_freqtest_df,
     
     if (result[1] %in% c("html", "markdown", "latex", "pandoc")) 
     {
-        return(kable(formated_freqtest_df, format = result[1], caption = cap))
+        return(kable(formated_freqtest_df, format = result[1], caption = cap, row.names = TRUE))
     }
     else
     {
