@@ -77,7 +77,11 @@ print_freqtst <- function(formated_freqtest_df,
     
     if (result[1] %in% c("html", "markdown", "latex", "pandoc")) 
     {
-        return(kable(formated_freqtest_df, format = result[1], caption = cap, row.names = TRUE))
+        return(kable(formated_freqtest_df, 
+                     format = result[1], 
+                     caption = cap, 
+                     row.names = TRUE,
+                     digits = digits))
     }
     else
     {
