@@ -53,6 +53,10 @@ library(reshape2)
 ```
 
 
+## Data input
+
+Load the data for the study.
+
 ```{r import-data}
 enve_all <- read.dbf("enve2014cuest_ciega_2014.dbf")
 cat_entidades <- read.csv("cat_entidades.csv", head=TRUE)
@@ -91,6 +95,14 @@ table(enve_test$extortions)
 
 levels(enve_test$extortion_victim) <- c("yes", "no", "dk")
 enve_test$extortion_victim <- relevel(enve_test$extortion_victim, ref = "no")
+
+enve_test$rep_extortion_victim <- factor(enve_test$extortions)
+levels(enve_test$rep_extortion_victim) <- c(0, 0,
+                    rep(1, length(levels(enve_test$rep_extortion_victim)) - 2))
+
+summary(enve_test$rep_extortion_victim)
+
+
 summary(enve_test)
 ```
 
@@ -204,6 +216,8 @@ summary(enve_test)
 
 # EDA
 
+## Extortion vs Years
+
 First a brief EDA analysis of the years variable, using a facet plot of the bivariate relationship with extortion incidents.
 
 ```{r years-plots}
@@ -235,13 +249,17 @@ years_scatterplots +
 
 ```
 
+## Extortion prevalence contingency tables
+
+
+
 To do tomorrow:
 - For the EDA, create a facet ggplot for the years variable (done)
+- create new variable for repeat extortion victim (done)
+- Do contingency tables for the extortion (and repeat extortion) victim variable (use a function)
 - calculate the true prevalence and incidence to make sure it matches the one I calculated for the state values
 - If I do exclude the NAs, redo the EDA analysis
-- Do contingency tables for the extortion victim variable
-- create new variable for repeat extortion victim
-- Add chunk to load variables as needed.
+- Add chunk to load functions as needed.
 - Then let's start adding the models, as including new state-level variables, would probably have to rerun all of them
 - Also, will need to run ZIP and hurdle. should optimise the modelling strategy, as we know it can be extremely time consuming. (should probably exclude cols with NAs to avoid errors), will attempt all with glmmadmb.
 
