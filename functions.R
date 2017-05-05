@@ -1,90 +1,121 @@
-#### Assorted functions for the analysis
-
-# Index of dispersion test
-
-id.test <- function(x)
+my.chisq.test <- function(anftable, ...)
 {
-  # Takes a vector and calculates the index of dispersion
-  # Then evaluates its significance for Overdispersion only
-  # Returns a list with named numbers
-  mu <- mean(x)
-  names(mu) <- "Mean"
-  v <- var(x)
-  names(v) <- "Variance"
-  n <- length(x)
-  df <- n-1
-  names(df) <- "df"
-  index <- ((df)*v)/mu
-  names(index) <- "I"
-  pval <- pchisq(index, df, lower.tail=FALSE)
-  names(pval) <- "P-value"
-  pv95 <- qchisq(.95, df)
-  names(pv95) <- "95% Chi-sq"
-
-  return(c(index, pval, df, pv95))
-}
-
-
-## Function to print table with obs and exp and chi-sq test
-
-obs_exp_test <- function(dataframe, exp, par)
-  {
-  cs<-factor(0:(length(dataframe[,1])-1))
-  index <- max(which(exp >= 4))
-  levels(cs)[index:length(dataframe[,1])] <- paste(as.character(index-1), "+", sep="")
-  ef<-as.vector(tapply(exp,cs,sum))
-  of<-as.vector(tapply(dataframe[,2],cs,sum))
-  ofef_table <- data.frame(Events=0:(index-1), Obs=of, Exp=ef)
-  chisq_t <- sum((of-ef)^2/ef)
-  df <- length(of)-par-1
-  pval <- 1-pchisq(chisq_t, df)
-  return(list(Table=ofef_table, Chisq=chisq_t, DF=df, PValue=pval))
-  }
-
-# clog function for plotting
-
-  clog10 <- function(x)
-{
-  for(i in 1:length(x))
-  {
-    x[i] <- round(x[i])
-    if (x[i] == 0)
+    # A function to run a chi-square test on a contingency table
+    # It tests if there is a warning with the standard test
+    # if there is, it performs the test under simulation instead
+    # calculates Cramers V too.
+    
+    tc <- tryCatch(chisq.test(anftable), warning = function(x) x)
+    
+    simul <- FALSE
+    
+    if(is(tc, "warning"))
     {
-      x[i] <- x[i] + 1
-    }
-    else if (x[i] == 1)
-    {
-      x[i] <- x[i] + 0.3
-    }
-  }
-
-  return(log10(x))
+        simul <- TRUE
+    } 
+    
+    test <- chisq.test(anftable, simulate.p.value = simul, ...)
+    
+    CV <- sqrt(test$statistic / 
+                   (sum(anftable) * 
+                   (min(ncol(anftable), nrow(anftable)) - 1)))
+    
+    CV <- as.numeric(CV)
+    
+    return(list(chisqtest = test, CV=CV))
+    
 }
 
-# Cramer's V function
 
-cv.test = function(df) {
-  CV = sqrt(chisq.test(df)$statistic /
-              (sum(df) * (min(ncol(df),nrow(df)) - 1)))
-  return(as.numeric(CV))
-}
-
-# Model deviance statistic function
-
-dev.stat <- function(m)
+format.ftables.tst <- function(ftables_list)
 {
-  y <- m$frame[,1]
-  mu <- m$fitted
-  fam <- m$family
-  if (fam == "poisson")
-  {
-    dev <- 2 * sum(y * log(ifelse(y==0, 1, y/mu)))
-  }
-  else
-  {
-    alpha <- m$alpha
-    dev <- 2 * sum(y * log(ifelse(y==0, 1, y/mu)) - (y+alpha) * log((y+alpha)/(mu+alpha)))
-  }
+    # Takes a list of chisq tests from the many.ftables.tst() function
+    # and sumarises the results as a dataframe
+    
+    require(dplyr)
+    
+    results.matrix <- matrix(ncol=4, nrow = length(ftables_list))
+    rownames(results.matrix) <- names(ftables_list)
+    colnames(results.matrix) <- c("Chisq", "df", "p.value", "CV")
+    
+    for(i in 1:length(ftables_list))
+    {
+        results.matrix[i,1] <- ftables_list[[i]]$chisqtest$statistic
+        results.matrix[i,2] <- ftables_list[[i]]$chisqtest$parameter
+        results.matrix[i,3] <- ftables_list[[i]]$chisqtest$p.value
+        results.matrix[i,4] <- ftables_list[[i]]$CV
+    }
+    
+    results.df <- as.data.frame(results.matrix)
+    
+    results.df %>%
+        mutate(s=make_stars(pval=p.value)) -> results.df
+    
+    return(results.df)
+}
 
-  return(dev)
+make_stars <- function(pval=pval)
+{
+    # prints significance stars for every p-vlaue of numeric vector pval
+    ifelse(pval < .001, "***", ifelse(pval < .01, "**", ifelse(pval < .05, "*", "")))
+}
+
+
+print_freqtst <- function(formated_freqtest_df, 
+                          result = c("none", "markdown", "latex", "html", "pandoc"), 
+                          digits = 3,
+                          scientific = TRUE,
+                          DV)
+{
+    # prints pretty table from format.ftables.tst()
+    require(knitr)
+    
+    legend <- ": Chi-square tests of association. df = NA indicates simulated p-value."
+    
+    cap <- paste(DV, legend, sep = "")
+    
+    if (result[1] %in% c("html", "markdown", "latex", "pandoc")) 
+    {
+        return(kable(formated_freqtest_df, format = result[1], caption = cap))
+    }
+    else
+    {
+        return(format(formated_freqtest_df, digits = digits, scientific = scientific))
+    }
+}
+
+
+many.ftables.tst <- function(df, DV, IV, 
+                             print.special = c("none", "markdown", "latex", "html", "pandoc"),
+                             ...)
+{
+    # takes a data frame, a DV and a vector of 
+    # at least one IV, and generates a series of ftables
+    # stops if the class of the IV or the DV is not factor
+    
+    if(class(df[,DV]) != "factor") stop("ERROR: DV is not a factor")
+    
+    results <- list()
+    
+    for(i in 1:length(IV))
+    {
+        if(class(df[,IV[i]]) != "factor") stop("ERROR: IV is not a factor")
+        
+        freqtable <- ftable(df[,IV[i]],  df[,DV])
+        
+        names(attr(freqtable, which = "col.vars")) <- DV
+        names(attr(freqtable, which = "row.vars")) <- IV[i]
+        
+        chsqtst <- my.chisq.test(freqtable, ...)
+        
+        results[[IV[i]]] <- chsqtst
+        
+    }
+    
+    results.df <- format.ftables.tst(results)
+    
+    final <- print_freqtst(results.df, result = print.special[1], DV = DV)
+    
+    return(final)
+    
 }
