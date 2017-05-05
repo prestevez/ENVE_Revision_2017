@@ -49,6 +49,7 @@ library(lme4)
 library(glmmADMB)
 library(classInt)
 library(dplyr)
+library(reshape2)
 ```
 
 
@@ -186,6 +187,11 @@ intyears <- classIntervals(enve_test$years, 5, style="quantile")
 enve_test$yearsquant <- cut(enve_test$years, intyears$brks, right=TRUE,
                             include.lowest = TRUE)
 
+intyears_deciles <- classIntervals(enve_test$years, 10, style="quantile")
+enve_test$years_deciles <- cut(enve_test$years, intyears_deciles$brks, right=TRUE,
+                            include.lowest = TRUE)
+
+
 enve_test <- merge(enve_test, area_level, by="CVE_ENT", all.x=TRUE)
 
 length(enve_test$extortions[is.na(enve_test$extortions)])
@@ -196,6 +202,47 @@ summary(enve_test)
 
 ```
 
+# EDA
 
+First a brief EDA analysis of the years variable, using a facet plot of the bivariate relationship with extortion incidents.
+
+```{r years-plots}
+
+enve_test %>%
+    select(extortions, years, yearsquant, years_deciles) -> gg_ext_years
+
+
+
+years_scatterplots <- ggplot(gg_ext_years, aes(x = years, y = extortions))
+
+years_scatterplots + geom_point() + theme_bw() + geom_smooth(method = "lm")
+
+# Quintiles
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_wrap(~ yearsquant, scales = "free_x") + 
+    geom_smooth(method = "lm")
+
+# For deciles
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_wrap(~ years_deciles, scales = "free_x") + 
+    geom_smooth(method = "lm")
+
+```
+
+To do tomorrow:
+- For the EDA, create a facet ggplot for the years variable (done)
+- calculate the true prevalence and incidence to make sure it matches the one I calculated for the state values
+- If I do exclude the NAs, redo the EDA analysis
+- Do contingency tables for the extortion victim variable
+- create new variable for repeat extortion victim
+- Add chunk to load variables as needed.
+- Then let's start adding the models, as including new state-level variables, would probably have to rerun all of them
+- Also, will need to run ZIP and hurdle. should optimise the modelling strategy, as we know it can be extremely time consuming. (should probably exclude cols with NAs to avoid errors), will attempt all with glmmadmb.
 
 
