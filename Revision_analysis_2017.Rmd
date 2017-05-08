@@ -37,20 +37,28 @@ options(scipen=0)
 
 ## Load packages and functions
 
+Install custom package, requires `devtools`.
+
+```{r install-estevez}
+devtools::install_github("prestevez/estevez")
+```
+
 Next we load the packages that we will use.
 
 ```{r packages}
+library(estevez)
 library(foreign)
 library(ggplot2)
 library(Cairo)
 library(knitr)
-library(texreg)
+#library(texreg)
 library(lme4)
 library(glmmADMB)
 library(classInt)
 library(dplyr)
 library(reshape2)
 ```
+
 
 
 ## Data input
@@ -213,6 +221,33 @@ length(enve_test$bribes[is.na(enve_test$bribes)])
 summary(enve_test)
 
 ```
+## Incident module
+
+Add data from the incident module to briefly, **briefly**, analyse the distributions of extortion according to modus operandi.
+
+``` {r incident-module}
+enve_incidents_all <- read.dbf("enve2014delitos_ciega_2014.dbf")
+
+# Selecting only those relevant for extortion (code 10)
+enve_incidents_all$delito <- as.integer(as.character(enve_incidents_all$ID_DELITO))
+enve_incidents <- enve_incidents_all[enve_incidents_all$delito == 10,]
+
+incident_df <- data.frame(CVE_UNICA=as.integer(as.character(enve_incidents$ID_CONSECU)))
+
+incident_df$delito <- enve_incidents$delito
+
+incident_df$extortion_type <- as.character(enve_incidents$M5_1)
+incident_df$extortion_type <- as.factor(incident_df$extortion_type)
+levels(incident_df$extortion_type) <- c("Telephone", "Internet", "Street",
+                                        "Premises", "Cobro de piso", "Other")
+
+incident_df$ext_type_simple <- incident_df$extortion_type
+levels(incident_df$ext_type_simple) <- c("Remote", "Remote", "In person",
+                                        "In person", "In person", "Other")
+
+summary(incident_df)
+```
+
 
 # EDA
 
@@ -251,12 +286,40 @@ years_scatterplots +
 
 ## Extortion prevalence contingency tables
 
+This function tests the association between extortion and a vector of variables (still need to programatically create the tables TO DO)
 
+```{r freq-table-test}
+
+ext_preval_tbl_test <- many.ftables.tst(enve_test, DV = "extortion_victim",
+                                        IV = c("bribe_victim",
+                                               "size",
+                                               "subsector",
+                                               "yearsquant",
+                                               "years_deciles",
+                                               "NOM_ENT"),
+                                        print.special = "pandoc")
+
+ext_preval_tbl_test
+
+repext_preval_tbl_test <- many.ftables.tst(enve_test, DV = "rep_extortion_victim",
+                                        IV = c("bribe_victim",
+                                               "size",
+                                               "subsector",
+                                               "yearsquant",
+                                               "years_deciles",
+                                               "NOM_ENT"),
+                                        print.special = "pandoc")
+
+repext_preval_tbl_test
+
+
+```
 
 To do tomorrow:
 - For the EDA, create a facet ggplot for the years variable (done)
 - create new variable for repeat extortion victim (done)
-- Do contingency tables for the extortion (and repeat extortion) victim variable (use a function)
+- Do contingency tables for the extortion (and repeat extortion) victim variable (use a function) (did the tests, now need to print the tables)
+
 - calculate the true prevalence and incidence to make sure it matches the one I calculated for the state values
 - If I do exclude the NAs, redo the EDA analysis
 - Add chunk to load functions as needed.
