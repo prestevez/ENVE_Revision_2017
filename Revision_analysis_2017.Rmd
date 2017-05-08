@@ -281,8 +281,31 @@ enve_incvic %>%
 
 enve_type_counts[(is.na(enve_type_counts))] <- 0
 
+nrow(enve_type_counts)
+
+enve_type_counts %>%
+    mutate(cap_count = simpRemote + simpIn.person + simpOther,
+           propTel = typeTelephone/cap_count,
+           propInternet = typeInternet/cap_count,
+           propStreet = typeStreet/cap_count,
+           propPremises = typePremises/cap_count,
+           propPiso = typeCobro.de.piso/cap_count,
+           propOther = typeOther/cap_count,
+           propRemote = simpRemote/cap_count,
+           propIn.person = simpIn.person/cap_count) -> enve_type_counts_and_props
+
+enve_type_counts_and_props[is.na(enve_type_counts_and_props)] <- 0
+
 enve_test %>%
-    left_join(enve_type_counts, by = "CVE_UNICA") -> enve_final
+    left_join(enve_type_counts_and_props, by = "CVE_UNICA") %>%
+    mutate(estTel = round(propTel * extortions),
+           estInternet = round(propInternet * extortions),
+           estStreet =  round(propStreet * extortions),
+           estPremises = round(propPremises * extortions),
+           estPiso = round(propPiso * extortions),
+           estOther = round(propOther * extortions),
+           estRemote = round(propRemote * extortions),
+           estIn.person = round(propIn.person * extortions)) -> enve_final
 
 summary(enve_final)
 
