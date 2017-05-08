@@ -236,18 +236,44 @@ incident_df <- data.frame(CVE_UNICA=as.integer(as.character(enve_incidents$ID_CO
 
 incident_df$delito <- enve_incidents$delito
 
-incident_df$extortion_type <- as.character(enve_incidents$M5_1)
-incident_df$extortion_type <- as.factor(incident_df$extortion_type)
-levels(incident_df$extortion_type) <- c("Telephone", "Internet", "Street",
+incident_df$type <- as.character(enve_incidents$M5_1)
+incident_df$type <- as.factor(incident_df$type)
+levels(incident_df$type) <- c("Telephone", "Internet", "Street",
                                         "Premises", "Cobro de piso", "Other")
 
-incident_df$ext_type_simple <- incident_df$extortion_type
-levels(incident_df$ext_type_simple) <- c("Remote", "Remote", "In person",
+incident_df$simp <- incident_df$type
+levels(incident_df$simp) <- c("Remote", "Remote", "In person",
                                         "In person", "In person", "Other")
+
+# Transform the factors into dummy variables
+
+type_dummy <- data.frame(model.matrix( ~ type -1 , data = incident_df))
+
+simple_dummy <- data.frame(model.matrix( ~ simp -1 , data = incident_df))
+
+incident_df <- cbind(incident_df, type_dummy, simple_dummy)
+
 
 summary(incident_df)
 ```
 
+Next we merge both incident-level and victim-level tables, and produce a new business-level table with counts based on the incident module.
+
+```{r incident-victim-merge}
+
+enve_incvic <- merge(incident_df, enve_test, by="CVE_UNICA")
+
+summary(enve_incvic)
+nrow(enve_incvic)
+nrow(enve_test)
+
+head(melt(enve_incvic))
+
+enve_incvic %>%
+    group_by(CVE_UNICA) %>%
+    summarise(n()) %>%
+    head
+```
 
 # EDA
 
