@@ -253,7 +253,6 @@ simple_dummy <- data.frame(model.matrix( ~ simp -1 , data = incident_df))
 
 incident_df <- cbind(incident_df, type_dummy, simple_dummy)
 
-
 summary(incident_df)
 ```
 
@@ -261,18 +260,32 @@ Next we merge both incident-level and victim-level tables, and produce a new bus
 
 ```{r incident-victim-merge}
 
-enve_incvic <- merge(incident_df, enve_test, by="CVE_UNICA")
+enve_incvic <- merge(incident_df, enve_test, by="CVE_UNICA", all.y = TRUE)
 
 summary(enve_incvic)
 nrow(enve_incvic)
 nrow(enve_test)
-
-head(melt(enve_incvic))
+length(unique(enve_incvic$CVE_UNICA))
 
 enve_incvic %>%
     group_by(CVE_UNICA) %>%
-    summarise(n()) %>%
-    head
+    summarise(typeTelephone = sum(typeTelephone),
+              typeInternet = sum(typeInternet),
+              typeStreet = sum(typeStreet),
+              typePremises = sum(typePremises),
+              typeCobro.de.piso = sum(typeCobro.de.piso),
+              typeOther = sum(typeOther),
+              simpRemote = sum(simpRemote),
+              simpIn.person = sum(simpIn.person),
+              simpOther = sum(simpOther)) -> enve_type_counts
+
+enve_type_counts[(is.na(enve_type_counts))] <- 0
+
+enve_test %>%
+    left_join(enve_type_counts, by = "CVE_UNICA") -> enve_final
+
+summary(enve_final)
+
 ```
 
 # EDA
