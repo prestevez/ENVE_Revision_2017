@@ -338,7 +338,7 @@ names(extortion_dist1) <- extortion_columns1
 
 ext1_vicum <- lapply(extortion_dist1, victim_cumulative)
 
-lapply(ext1_vicum, kable, style = "pandoc")
+lapply(ext1_vicum, kable, style = "pandoc", digits = 3)
 
 ```
 
