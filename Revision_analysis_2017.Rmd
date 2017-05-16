@@ -401,6 +401,80 @@ lapply(ext_capped_vicum, kable, style = "pandoc", digits = 3)
 
 ```
 
+```{r extortion-capped-lorenz}
+
+lapply(extortion_columns_capped, victim_lorenz, data = enve_final,
+       family = "poisson")
+
+lapply(extortion_columns_capped, victim_lorenz, data = enve_final,
+       family = "nbinom")
+
+```
+
+Now do some hypothesis testing **Need to add chi-sq comparisons to expected distribution**
+
+```{r capped-extortions-tests}
+
+lapply(extortion_columns_capped, mc_gini_test, data = enve_final,
+       family = "poisson", plots = TRUE) 
+
+lapply(extortion_columns_capped, mc_gini_test, data = enve_final,
+       family = "nbinom", plots = TRUE) 
+
+dispersion_batch(extortion_columns_capped, enve_final, print_option = "pandoc")
+
+ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc", 
+              family = "poisson")
+
+ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc", 
+              family = "nbinom")
+
+```
+
+
+
+Now do the estimated counts
+
+```{r estimated-extortion-univariate distributions}
+
+extortion_columns_estimated <- c("estTel",
+                              "estInternet",
+                              "estStreet",
+                              "estPremises",
+                              "estPiso",
+                              "estOther",
+                              "estRemote",
+                              "estIn.person")
+
+extortion_dist_estimated <- lapply(extortion_columns_estimated, function(x) 
+                                {
+                                    if(mean(enve_final[,x]) == 0){message(paste0("skipping ", x, ". No obs."))}
+                                    else{victim_table(x, data = enve_final, print_option = "pandoc")}
+                                })
+
+names(extortion_dist_estimated) <- extortion_columns_estimated
+
+extortion_dist_estimated
+
+
+extortion_dist_estimated_nfor <- lapply(extortion_columns_estimated, function(x) 
+                                {
+                                    if(mean(enve_final[,x]) == 0){message(paste0("skipping ", x, ". No obs."))}
+                                    else{victim_table(x, data = enve_final, print_option = "none")}
+                                })
+
+names(extortion_dist_estimated_nfor) <- extortion_columns_estimated
+
+ext_estim_vicum <- lapply(extortion_dist_estimated_nfor,
+                          function(x) {if(is.null(x)){message("skipping NULL objects")}
+                              else {victim_cumulative(x)}}
+                          )
+
+lapply(ext_estim_vicum, 
+       function(x) {if(is.null(x)){message("skipping NULL objects")}
+                    else {kable(x, style = "pandoc", digits = 3)}})
+
+```
 
 ## Extortion vs Years
 
