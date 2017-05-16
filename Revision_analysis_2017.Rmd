@@ -385,9 +385,18 @@ extortion_columns_capped <- c("typeTelephone",
 extortion_dist_capped <- lapply(extortion_columns_capped, victim_table,
                           data = enve_final, print_option = "pandoc")
 
-names(extortion_dist_capped) <- extortion_dist_capped
+names(extortion_dist_capped) <- extortion_columns_capped
 extortion_dist_capped
 
+
+extortion_dist_capped_nformat <- lapply(extortion_columns_capped, victim_table,
+                          data = enve_final, print_option = "none")
+
+names(extortion_dist_capped_nformat) <- extortion_columns_capped
+
+ext_capped_vicum <- lapply(extortion_dist_capped_nformat, victim_cumulative)
+
+lapply(ext_capped_vicum, kable, style = "pandoc", digits = 3)
 
 
 ```
