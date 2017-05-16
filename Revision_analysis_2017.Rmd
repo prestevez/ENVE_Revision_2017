@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       cache=TRUE,
                       dev=c("png", "CairoPDF"),
                       error=TRUE)
+options(knitr.kable.NA = '--')
 ```
 
 # Introduction
@@ -312,6 +313,49 @@ summary(enve_final)
 ```
 
 # EDA
+
+Re-do some of the EDA
+
+## Univariate extortion analysis
+
+Distribution, lorenz plots and poisson tests for the aggregated extortion counts in the screening questionnaire
+
+```{r univariate-EDA}
+
+extortion_columns1 <- c("extortions", "extortions_nas")
+
+extortion_dist1 <- lapply(extortion_columns1, victim_table,
+                          data = enve_final, print_option = "pandoc")
+
+names(extortion_dist1) <- extortion_columns1
+
+extortion_dist1
+
+```
+
+```{r extortions1-lorenz}
+
+lapply(extortion_columns1, victim_lorenz, 
+       data = enve_final, family = "none")
+
+victim_lorenz("extortions", enve_final, family = "poisson")
+
+victim_lorenz("extortions", enve_final, family = "nbinom")
+
+```
+
+Now do some MC gini tests, Index of dispersion tests, and KS tests
+
+```{r extortions1-tests}
+
+mc_gini_test("extortions", enve_final, family = "poisson", plots = TRUE)
+mc_gini_test("extortions", enve_final, family = "nbinom", plots = TRUE)
+
+dispersion_batch("extortions", enve_final, print_option = "pandoc")
+
+ks_test_batch("extortions", enve_final, print_option = "pandoc")
+
+```
 
 ## Extortion vs Years
 
