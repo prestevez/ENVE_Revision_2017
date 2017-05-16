@@ -368,7 +368,29 @@ ks_test_batch("extortions", enve_final, print_option = "pandoc")
 
 ## Univariate: other extortion types
 
-Now do the univariate analysis for the rest of the 
+Now do the univariate analysis for the rest of the extortion variables. First for the capped counts.
+
+```{r extortions-capped-univariate-distribution}
+
+extortion_columns_capped <- c("typeTelephone",
+                              "typeInternet",
+                              "typeStreet",
+                              "typePremises",
+                              "typeCobro.de.piso",
+                              "typeOther",
+                              "simpRemote",
+                              "simpIn.person",
+                              "cap_count")
+
+extortion_dist_capped <- lapply(extortion_columns_capped, victim_table,
+                          data = enve_final, print_option = "pandoc")
+
+names(extortion_dist_capped) <- extortion_dist_capped
+extortion_dist_capped
+
+
+
+```
 
 
 ## Extortion vs Years
