@@ -476,6 +476,87 @@ lapply(ext_estim_vicum,
 
 ```
 
+```{r extortion-estimated-lorenz}
+
+lapply(extortion_columns_estimated, victim_lorenz, data = enve_final,
+       family = "poisson")
+
+lapply(extortion_columns_estimated, victim_lorenz, data = enve_final,
+       family = "nbinom")
+
+```
+
+
+```{r estimated-extortions-tests}
+
+lapply(extortion_columns_estimated, mc_gini_test, data = enve_final,
+       family = "poisson", plots = TRUE) 
+
+lapply(extortion_columns_estimated, mc_gini_test, data = enve_final,
+       family = "nbinom", plots = TRUE) 
+
+dispersion_batch(extortion_columns_estimated, enve_final, print_option = "pandoc")
+
+ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc", 
+              family = "poisson")
+
+ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc", 
+              family = "nbinom")
+
+```
+
+# Bivariate EDA
+
+## Extortion prevalence
+
+```{r ext-prevalence-vs-bribes}
+
+ivs <- c("bribes",
+         "bribe_victim",
+         "size",
+         "subsector",
+         "yearsquant",
+         "years_deciles")
+
+ext_p_batch_chsq <- batch_chisq(df = enve_final, DV = "extortion_victim", IV = ivs)
+
+kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc", 
+      caption = "Chi-square tests between 'extortion prevalence' and a set of DV")
+
+chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc")
+
+chisq_list(ext_p_batch_chsq, option = "ratio", print_option = "pandoc")
+
+chisq_list(ext_p_batch_chsq, option = "percent", print_option = "pandoc")
+
+
+```
+
+## Extortion distribution
+
+```{r ext-distribution-vs-bribes}
+
+ivs <- c("bribes",
+         "bribe_victim",
+         "size",
+         "subsector",
+         "yearsquant",
+         "years_deciles")
+
+ext_p_batch_chsq <- batch_chisq(df = enve_final, DV = "extortions", IV = ivs)
+
+kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc", 
+      caption = "Chi-square tests between 'extortion counts' and a set of DV")
+
+chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc")
+
+chisq_list(ext_p_batch_chsq, option = "ratio", print_option = "pandoc")
+
+chisq_list(ext_p_batch_chsq, option = "percent", print_option = "pandoc")
+
+
+```
+
 ## Extortion vs Years
 
 First a brief EDA analysis of the years variable, using a facet plot of the bivariate relationship with extortion incidents.
@@ -509,41 +590,14 @@ years_scatterplots +
 
 ```
 
-## Extortion prevalence contingency tables
 
-This function tests the association between extortion and a vector of variables (still need to programatically create the tables TO DO)
-
-```{r freq-table-test}
-
-ext_preval_tbl_test <- many.ftables.tst(enve_test, DV = "extortion_victim",
-                                        IV = c("bribe_victim",
-                                               "size",
-                                               "subsector",
-                                               "yearsquant",
-                                               "years_deciles",
-                                               "NOM_ENT"),
-                                        print.special = "pandoc")
-
-ext_preval_tbl_test
-
-repext_preval_tbl_test <- many.ftables.tst(enve_test, DV = "rep_extortion_victim",
-                                        IV = c("bribe_victim",
-                                               "size",
-                                               "subsector",
-                                               "yearsquant",
-                                               "years_deciles",
-                                               "NOM_ENT"),
-                                        print.special = "pandoc")
-
-repext_preval_tbl_test
-
-
-```
 
 To do tomorrow:
-- For the EDA, create a facet ggplot for the years variable (done)
-- create new variable for repeat extortion victim (done)
-- Do contingency tables for the extortion (and repeat extortion) victim variable (use a function) (did the tests, now need to print the tables)
+- Chi-square test function to test obs vs expected for counts
+- Move on to state analysis as listed in notebook
+- Move on to models
+- Test
+- Send
 
 - calculate the true prevalence and incidence to make sure it matches the one I calculated for the state values
 - If I do exclude the NAs, redo the EDA analysis
