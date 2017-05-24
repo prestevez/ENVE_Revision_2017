@@ -591,6 +591,59 @@ ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc",
 ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc", 
               family = "nbinom")
 
+# poisson expected chisq
+
+ext_est_chisq_p <- lapply(extortion_columns_estimated, function(x)
+{
+    tryCatch(chisq_count(x, data = enve_final, B = 2000), 
+             error = function(e) NULL)
+})
+
+ext_est_chisq_p
+
+nullind <- which(unlist(lapply(ext_est_chisq_p, is.null)))
+
+ext_est_chisq_p <- ext_est_chisq_p[-nullind]
+
+kable(chisq_tb(ext_est_chisq_p), format = "pandoc", digits = 3)
+
+
+ext_est_p_tb <- lapply(ext_est_chisq_p, function(x)
+    {
+    kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
+          format = "pandoc", digits = 3, caption = "Expected: Poisson")
+    })
+
+
+ext_est_p_tb
+
+# nbinom expected chisq
+
+ext_est_chisq_nb <- lapply(extortion_columns_estimated, function(x)
+{
+    tryCatch(chisq_count(x, data = enve_final, B = 2000, 
+                         family = "nbinom"), 
+             error = function(e) NULL)
+})
+
+ext_est_chisq_nb
+
+nullind <- which(unlist(lapply(ext_est_chisq_nb, is.null)))
+
+ext_est_chisq_nb <- ext_est_chisq_nb[-nullind]
+
+kable(chisq_tb(ext_est_chisq_nb), format = "pandoc", digits = 3)
+
+
+ext_est_nb_tb <- lapply(ext_est_chisq_nb, function(x)
+    {
+    kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
+          format = "pandoc", digits = 3, caption = "Expected: nbinom")
+    })
+
+
+ext_est_nb_tb
+
 ```
 
 # Bivariate EDA
