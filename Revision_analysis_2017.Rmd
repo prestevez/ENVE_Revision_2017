@@ -41,13 +41,13 @@ options(scipen=0)
 Install custom package, requires `devtools`.
 
 ```{r install-estevez}
-devtools::install_github("prestevez/estevez")
+devtools::install_github("prestevez/vicarp")
 ```
 
 Next we load the packages that we will use.
 
 ```{r packages}
-library(estevez)
+library(vicarp)
 library(foreign)
 library(ggplot2)
 library(Cairo)
@@ -362,7 +362,31 @@ mc_gini_test("extortions", enve_final, family = "nbinom", plots = TRUE)
 
 dispersion_batch("extortions", enve_final, print_option = "pandoc")
 
-ks_test_batch("extortions", enve_final, print_option = "pandoc")
+my_ks_test("extortions", enve_final)
+
+my_ks_test("extortions", enve_final, family = "nbinom")
+
+ext_chisq_poiss <- chisq_count("extortions", data = enve_final, B = 2000,
+                               family = "poisson")
+
+ext_chisq_poiss
+
+ext_chisq_poiss_tb <- data.frame(ext_chisq_poiss$observed,
+                                 Exp = ext_chisq_poiss$expected)[,c(1,2,4)]
+
+kable(ext_chisq_poiss_tb, format = "pandoc", digits = 3, 
+      caption = "Poisson expected counts")
+
+ext_chisq_nbinom <- chisq_count("extortions", data = enve_final, B = 2000,
+                               family = "nbinom")
+
+ext_chisq_nbinom
+
+ext_chisq_nbinom_tb <- data.frame(ext_chisq_nbinom$observed,
+                                 Exp = ext_chisq_nbinom$expected)[,c(1,2,4)]
+
+kable(ext_chisq_nbinom_tb, format = "pandoc", digits = 3, 
+      caption = "Negative binomial expected counts")
 
 ```
 
@@ -411,7 +435,7 @@ lapply(extortion_columns_capped, victim_lorenz, data = enve_final,
 
 ```
 
-Now do some hypothesis testing **Need to add chi-sq comparisons to expected distribution**
+Now do some hypothesis testing 
 
 ```{r capped-extortions-tests}
 
@@ -428,6 +452,62 @@ ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc",
 
 ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc", 
               family = "nbinom")
+
+# poisson expected chisq
+
+ext_cap_chisq_p <- lapply(extortion_columns_capped, function(x)
+{
+    tryCatch(chisq_count(x, data = enve_final, B = 2000), 
+             error = function(e) NULL)
+})
+
+ext_cap_chisq_p
+
+nullind <- which(unlist(lapply(ext_cap_chisq_p, is.null)))
+
+ext_cap_chisq_p <- ext_cap_chisq_p[-nullind]
+
+kable(chisq_tb(ext_cap_chisq_p), format = "pandoc", digits = 3)
+
+
+ext_cap_p_tb <- lapply(ext_cap_chisq_p, function(x)
+    {
+    kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
+          format = "pandoc", digits = 3, caption = "Expected: Poisson")
+    })
+
+
+ext_cap_p_tb
+
+# now for negbin
+
+ext_cap_chisq_nb <- lapply(extortion_columns_capped, function(x)
+{
+    tryCatch(chisq_count(x, data = enve_final, B = 2000, family = "nbinom"), 
+             error = function(e) NULL)
+})
+
+ext_cap_chisq_nb
+
+nullind <- which(unlist(lapply(ext_cap_chisq_nb, is.null)))
+
+ext_cap_chisq_nb <- ext_cap_chisq_nb[-nullind]
+
+kable(chisq_tb(ext_cap_chisq_nb), format = "pandoc", digits = 3)
+
+
+ext_cap_nb_tb <- lapply(ext_cap_chisq_nb, function(x)
+    {
+    kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
+          format = "pandoc", digits = 3, caption = "Expected: negbin")
+    })
+
+
+ext_cap_nb_tb
+
+
+
+
 
 ```
 
