@@ -505,10 +505,6 @@ ext_cap_nb_tb <- lapply(ext_cap_chisq_nb, function(x)
 
 ext_cap_nb_tb
 
-
-
-
-
 ```
 
 
@@ -558,22 +554,34 @@ lapply(ext_estim_vicum,
 
 ```{r extortion-estimated-lorenz}
 
-lapply(extortion_columns_estimated, victim_lorenz, data = enve_final,
-       family = "poisson")
+lapply(extortion_columns_estimated, function(x)
+{
+    tryCatch(victim_lorenz(x, data = enve_final, family = "poisson"),
+             error = function(e) NULL)
+})
 
-lapply(extortion_columns_estimated, victim_lorenz, data = enve_final,
-       family = "nbinom")
+lapply(extortion_columns_estimated, function(x)
+{
+    tryCatch(victim_lorenz(x, data = enve_final, family = "nbinom"),
+             error = function(e) NULL)
+})
 
 ```
 
 
 ```{r estimated-extortions-tests}
 
-lapply(extortion_columns_estimated, mc_gini_test, data = enve_final,
-       family = "poisson", plots = TRUE) 
+lapply(extortion_columns_estimated, function(x)
+{
+    tryCatch(mc_gini_test(x, data = enve_final, family = "poisson",
+                          plots = TRUE), error = function(e) NULL)
+}) 
 
-lapply(extortion_columns_estimated, mc_gini_test, data = enve_final,
-       family = "nbinom", plots = TRUE) 
+lapply(extortion_columns_estimated, function(x)
+{
+    tryCatch(mc_gini_test(x, data = enve_final, family = "nbinom",
+                          plots = TRUE), error = function(e) NULL)
+}) 
 
 dispersion_batch(extortion_columns_estimated, enve_final, print_option = "pandoc")
 
