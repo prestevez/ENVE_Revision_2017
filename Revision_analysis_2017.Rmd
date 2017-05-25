@@ -40,7 +40,7 @@ options(scipen=0)
 
 Install custom package, requires `devtools`.
 
-```{r install-estevez}
+```{r install-vicarp}
 devtools::install_github("prestevez/vicarp")
 ```
 
@@ -58,6 +58,7 @@ library(glmmADMB)
 library(classInt)
 library(dplyr)
 library(reshape2)
+library(qualvar)
 ```
 
 
@@ -646,6 +647,56 @@ ext_est_nb_tb
 
 ```
 
+## IQV
+
+Calculate the index of qualitative variation per business, then analyse these figures.
+
+```{r iqv}
+
+cols <- c("typeTelephone", "typeInternet", "typeStreet",
+          "typePremises", "typeCobro.de.piso", "typeOther")
+
+iqv_long <- iqv(enve_final[,cols])
+
+iqv_long
+
+enve_final$iqv_long <- apply(enve_final[,cols], 1, iqv)
+
+enve_final$iqv_long <- round(enve_final$iqv_long, 2)
+
+summary(enve_final$iqv_long)
+
+# now for simp cats
+
+cols_simp <- c("simpRemote", "simpIn.person", "simpOther")
+
+iqv_simp <- iqv(enve_final[,cols_simp])
+
+iqv_simp
+
+enve_final$iqv_simp <- apply(enve_final[,cols_simp], 1, iqv)
+
+enve_final$iqv_simp <- round(enve_final$iqv_simp, 2)
+
+summary(enve_final$iqv_simp)
+
+## Contingency tables to extortion frequency
+
+batch_iqvs <- batch_chisq(enve_final, "extortions", 
+                          c("iqv_long", "iqv_simp"))
+
+kable(chisq_tb(batch_iqvs, stars = TRUE), "pandoc", 
+      caption = "Chi-squared tests between 'extortions' and 'IQVs'" )
+
+chisq_list(batch_iqvs, option = "observed", print_option = "pandoc")
+
+chisq_list(batch_iqvs, option = "ratio", print_option = "pandoc")
+
+chisq_list(batch_iqvs, option = "percent", print_option = "pandoc")
+
+
+```
+
 # Bivariate EDA
 
 ## Extortion prevalence
@@ -700,7 +751,7 @@ chisq_list(ext_p_batch_chsq, option = "percent", print_option = "pandoc")
 
 ## Extortion vs Years
 
-First a brief EDA analysis of the years variable, using a facet plot of the bivariate relationship with extortion incidents.
+A brief EDA analysis of the years variable, using a facet plot of the bivariate relationship with extortion incidents.
 
 ```{r years-plots}
 
@@ -731,10 +782,25 @@ years_scatterplots +
 
 ```
 
+# State level
 
+Provide a brief summary of state-level figures. Include:
+
+- n business
+- n victims (extortion and bribery)
+- n repeat victims
+- n incidents
+- n repeat incidents
+- Gini index per state (for all and for business)
+- plot of lorenz curve per state
+
+
+```{r state-level-summary}
+
+```
 
 To do tomorrow:
-- Chi-square test function to test obs vs expected for counts
+
 - Move on to state analysis as listed in notebook
 - Move on to models
 - Test
