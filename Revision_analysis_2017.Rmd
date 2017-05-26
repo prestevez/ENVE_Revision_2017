@@ -786,16 +786,105 @@ years_scatterplots +
 
 Provide a brief summary of state-level figures. Include:
 
-- n business
-- n victims (extortion and bribery)
-- n repeat victims
-- n incidents
-- n repeat incidents
-- Gini index per state (for all and for business)
-- plot of lorenz curve per state
+- n business (n())
+- n victims (extortion and bribery) (filter by, then n())
+- n repeat victims (filter by)
+- n incidents (sum(extortions))
+- n repeat incidents (n incidents - n victims)
+- Gini index per state (for all and for business) (lets see...)
+- plot of lorenz curve per state (let see...)
 
 
-```{r state-level-summary}
+```{r state-level-summary, fig.width = 20, fig.height = 20}
+
+enve_final %>%
+    group_by(CVE_ENT, NOM_ENT) %>%
+    summarise(n = n(),
+              incidents = sum(extortions)) -> state_incidents_df
+
+enve_final %>%
+    filter(extortion_victim == "yes") %>%
+    group_by(NOM_ENT) %>%
+    summarise(victims = n()) -> state_evics_df
+
+enve_final %>%
+    filter(bribe_victim == "yes") %>%
+    group_by(NOM_ENT) %>%
+    summarise(bribe_vics = n()) -> state_bvics_df
+
+enve_final %>%
+    filter(rep_extortion_victim == 1) %>%
+    group_by(NOM_ENT) %>%
+    summarise(rep_ext_vics = n()) -> state_rep_vics_df
+
+state_incidents_df %>%
+    full_join(state_evics_df) %>%
+    full_join(state_rep_vics_df) %>%
+    mutate(rep_inci = incidents - rep_ext_vics) %>%
+    full_join(state_bvics_df) -> state_summary
+
+state_gini <- by(enve_final$extortions, enve_final$NOM_ENT, ineq::Gini)
+
+state_gini_df <- data.frame(Gini = state_gini[1:32])
+
+state_gini_df$NOM_ENT <- as.factor(rownames(state_gini_df))
+
+state_gini_tests <- by(enve_final$extortions, enve_final$NOM_ENT, mc_gini_test)
+
+state_mc_gini_l <- lapply(state_gini_tests[1:32], function(x) x$mc_mean)
+
+state_mc_gini_df <- data.frame(`Poisson Gini`= unlist(state_mc_gini_l))
+
+rownames(state_mc_gini_df) <- names(state_mc_gini_l)
+
+state_mc_gini_df$NOM_ENT <- as.factor(names(state_mc_gini_l))
+
+state_mc_gini_hyp <- sapply(state_gini_tests[1:32], 
+                            function(x) if(x$mc_test == TRUE) "***" 
+                                        else "")
+
+unlist(state_mc_gini_hyp) -> state_mc_gini_df$test
+
+state_summary %>%
+    left_join(state_gini_df) %>%
+    left_join(state_mc_gini_df) -> state_summary
+
+state_summary$Gini <- as.numeric(unname(state_summary$Gini))
+
+kable(state_summary, format = "pandoc", digits = 3)
+
+state_table <- by(enve_final$extortions, enve_final$NOM_ENT, victim_table)
+
+lapply(seq_along(state_table), function(x) 
+    {
+    cap <- names(state_table)[x]
+    final <- kable(state_table[[x]], format = "pandoc", digits = 3, 
+                   caption = cap)
+    return(final)
+    })
+
+victim_lorenz("extortions", data = enve_final, family = "poisson",
+              reps = 500, by_var = "NOM_ABR")
+
+
+
+```
+
+Compare the bribe variable from the `area_level` data set with the one from this state summary above
+
+```{r state-bribes}
+
+bribe_mean <- mean(state_summary$bribe_vics)
+
+state_summary %>%
+    left_join(area_level) %>%
+    dplyr::select(bribe_vics, log_bribe_vic) %>%
+    mutate(log_bribe_vic2 = log(bribe_vics) - log(bribe_mean),
+           dif = log_bribe_vic2 - log_bribe_vic) -> bribe_test
+
+bribe_test$test <- round(bribe_test$dif, 2) == 0
+
+kable(bribe_test, format = "pandoc")
 
 ```
 
