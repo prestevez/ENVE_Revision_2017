@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       dev=c("png", "CairoPDF"),
                       error=TRUE,
                       fig.width=4, fig.height=3)
-options(knitr.kable.NA = '--')
+options(knitr::kable.NA = '--')
 ```
 
 # Introduction
