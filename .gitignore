@@ -6,7 +6,6 @@
 *.Rproj
 
 # Test databases
-*.dbf
 
 # Directories
 results/
