@@ -901,3 +901,8 @@ To do tomorrow:
 - Also, will need to run ZIP and hurdle. should optimise the modelling strategy, as we know it can be extremely time consuming. (should probably exclude cols with NAs to avoid errors), will attempt all with glmmadmb.
 
 
+```{r endtime}
+endtime <- proc.time()
+
+endtime - starttime
+```
