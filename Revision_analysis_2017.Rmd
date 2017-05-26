@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       cache=TRUE,
                       dev=c("png", "CairoPDF"),
                       error=TRUE,
-                      fig.width=5, fig.height=4)
+                      fig.width=4, fig.height=3)
 options(knitr.kable.NA = '--')
 ```
 
@@ -468,10 +468,6 @@ ext_cap_chisq_p <- lapply(extortion_columns_capped, function(x)
 
 ext_cap_chisq_p
 
-nullind <- which(unlist(lapply(ext_cap_chisq_p, is.null)))
-
-ext_cap_chisq_p <- ext_cap_chisq_p[-nullind]
-
 kable(chisq_tb(ext_cap_chisq_p), format = "pandoc", digits = 3)
 
 
@@ -482,7 +478,7 @@ ext_cap_p_tb <- lapply(ext_cap_chisq_p, function(x)
     })
 
 
-ext_cap_p_tb
+print_kables(ext_cap_p_tb)
 
 # now for negbin
 
@@ -494,10 +490,6 @@ ext_cap_chisq_nb <- lapply(extortion_columns_capped, function(x)
 
 ext_cap_chisq_nb
 
-nullind <- which(unlist(lapply(ext_cap_chisq_nb, is.null)))
-
-ext_cap_chisq_nb <- ext_cap_chisq_nb[-nullind]
-
 kable(chisq_tb(ext_cap_chisq_nb), format = "pandoc", digits = 3)
 
 
@@ -508,7 +500,7 @@ ext_cap_nb_tb <- lapply(ext_cap_chisq_nb, function(x)
     })
 
 
-ext_cap_nb_tb
+print_kables(ext_cap_nb_tb)
 
 ```
 
@@ -551,9 +543,9 @@ ext_estim_vicum <- lapply(extortion_dist_estimated_nfor,
                               else {victim_cumulative(x)}}
                           )
 
-lapply(ext_estim_vicum, 
+print_kables(lapply(ext_estim_vicum, 
        function(x) {if(is.null(x)){message("skipping NULL objects")}
-                    else {kable(x, format = "pandoc", digits = 3)}})
+                    else {kable(x, format = "pandoc", digits = 3)}}))
 
 ```
 
@@ -606,21 +598,21 @@ ext_est_chisq_p <- lapply(extortion_columns_estimated, function(x)
 
 ext_est_chisq_p
 
-nullind <- which(unlist(lapply(ext_est_chisq_p, is.null)))
-
-ext_est_chisq_p <- ext_est_chisq_p[-nullind]
-
 kable(chisq_tb(ext_est_chisq_p), format = "pandoc", digits = 3)
 
 
 ext_est_p_tb <- lapply(ext_est_chisq_p, function(x)
     {
-    kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
+    if(is.null(x)) {"skipping null objects"}
+    else
+    {
+        kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
           format = "pandoc", digits = 3, caption = "Expected: Poisson")
+    }
     })
 
 
-ext_est_p_tb
+print_kables(ext_est_p_tb)
 
 # nbinom expected chisq
 
@@ -633,21 +625,21 @@ ext_est_chisq_nb <- lapply(extortion_columns_estimated, function(x)
 
 ext_est_chisq_nb
 
-nullind <- which(unlist(lapply(ext_est_chisq_nb, is.null)))
-
-ext_est_chisq_nb <- ext_est_chisq_nb[-nullind]
-
 kable(chisq_tb(ext_est_chisq_nb), format = "pandoc", digits = 3)
 
 
 ext_est_nb_tb <- lapply(ext_est_chisq_nb, function(x)
     {
-    kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
-          format = "pandoc", digits = 3, caption = "Expected: nbinom")
+    if(is.null(x)) {"skipping null objects"}
+    else
+    {
+      kable(data.frame(x$observed, Exp = x$expected)[,c(1,2,4)],
+          format = "pandoc", digits = 3, caption = "Expected: nbinom")  
+    }
     })
 
 
-ext_est_nb_tb
+print_kables(ext_est_nb_tb)
 
 ```
 
@@ -692,11 +684,11 @@ batch_iqvs <- batch_chisq(enve_final, "extortions",
 kable(chisq_tb(batch_iqvs, stars = TRUE), "pandoc", 
       caption = "Chi-squared tests between 'extortions' and 'IQVs'" )
 
-chisq_list(batch_iqvs, option = "observed", print_option = "pandoc")
+print_kables(chisq_list(batch_iqvs, option = "observed", print_option = "pandoc"))
 
-chisq_list(batch_iqvs, option = "ratio", print_option = "pandoc")
+print_kables(chisq_list(batch_iqvs, option = "ratio", print_option = "pandoc"))
 
-chisq_list(batch_iqvs, option = "percent", print_option = "pandoc")
+print_kables(chisq_list(batch_iqvs, option = "percent", print_option = "pandoc"))
 
 
 ```
@@ -719,11 +711,11 @@ ext_p_batch_chsq <- batch_chisq(df = enve_final, DV = "extortion_victim", IV = i
 kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc", 
       caption = "Chi-square tests between 'extortion prevalence' and a set of DV")
 
-chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc")
+print_kables(chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc"))
 
-chisq_list(ext_p_batch_chsq, option = "ratio", print_option = "pandoc")
+print_kables(chisq_list(ext_p_batch_chsq, option = "ratio", print_option = "pandoc"))
 
-chisq_list(ext_p_batch_chsq, option = "percent", print_option = "pandoc")
+print_kables(chisq_list(ext_p_batch_chsq, option = "percent", print_option = "pandoc"))
 
 
 ```
@@ -744,11 +736,11 @@ ext_p_batch_chsq <- batch_chisq(df = enve_final, DV = "extortions", IV = ivs)
 kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc", 
       caption = "Chi-square tests between 'extortion counts' and a set of DV")
 
-chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc")
+print_kables(chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc"))
 
-chisq_list(ext_p_batch_chsq, option = "ratio", print_option = "pandoc")
+print_kables(chisq_list(ext_p_batch_chsq, option = "ratio", print_option = "pandoc"))
 
-chisq_list(ext_p_batch_chsq, option = "percent", print_option = "pandoc")
+print_kables(chisq_list(ext_p_batch_chsq, option = "percent", print_option = "pandoc"))
 
 
 ```
@@ -802,7 +794,7 @@ Provide a brief summary of state-level figures. Include:
 - plot of lorenz curve per state (let see...)
 
 
-```{r state-level-summary, fig.width = 12, fig.height = 12}
+```{r state-level-summary, fig.width = 15, fig.height = 15}
 
 enve_final %>%
     group_by(CVE_ENT, NOM_ENT) %>%
@@ -868,7 +860,9 @@ lapply(seq_along(state_table), function(x)
     final <- kable(state_table[[x]], format = "pandoc", digits = 3, 
                    caption = cap)
     return(final)
-    })
+    }) -> state_dist_list
+
+print_kables(state_dist_list)
 
 victim_lorenz("extortions", data = enve_final, family = "poisson",
               reps = 500, by_var = "NOM_ABR")
