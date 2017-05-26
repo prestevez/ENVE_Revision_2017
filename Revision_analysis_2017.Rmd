@@ -41,7 +41,7 @@ options(scipen=0)
 Install custom package, requires `devtools`.
 
 ```{r install-vicarp}
-devtools::install_github("prestevez/vicarp")
+# devtools::install_github("prestevez/vicarp")
 ```
 
 Next we load the packages that we will use.
