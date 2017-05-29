@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       dev=c("png", "CairoPDF"),
                       error=TRUE,
                       fig.width=4, fig.height=3)
-options(knitr::kable.NA = '--')
+options(knitr.kable.NA = '--')
 ```
 
 # Introduction
@@ -191,19 +191,6 @@ enve_test$subsector <- droplevels(enve_test$subsector)
 enve_test$subsector <- relevel(enve_test$subsector, ref="Retail")
 levels(enve_test$subsector)
 
-### To exclude the subsectors with very few observations
-
-# summary(enve_test)
-# nrow(enve_test)
-# enve_test %>%
-#     filter(subsector != "Utilities") %>%
-#     filter(subsector != "Corporate") -> enve_test_2
-# 
-# enve_test_2$subsector <- droplevels(enve_test_2$subsector)
-# 
-# levels(enve_test_2$subsector)
-# nrow(enve_test_2)
-
 enve_test$years <- 2013 - as.numeric(as.character(enve_all$P3))
 intyears <- classIntervals(enve_test$years, 5, style="quantile")
 enve_test$yearsquant <- cut(enve_test$years, intyears$brks, right=TRUE,
@@ -218,6 +205,23 @@ enve_test <- merge(enve_test, area_level, by="CVE_ENT", all.x=TRUE)
 
 length(enve_test$extortions[is.na(enve_test$extortions)])
 length(enve_test$bribes[is.na(enve_test$bribes)])
+
+### To exclude the subsectors with very few observations
+
+summary(enve_test)
+nrow(enve_test)
+enve_test %>%
+    filter(subsector != "Utilities") %>%
+    filter(subsector != "Corporate") -> enve_test_2
+
+enve_test_2$subsector <- droplevels(enve_test_2$subsector)
+
+levels(enve_test_2$subsector)
+nrow(enve_test_2)
+
+enve_test <- enve_test_2
+
+####
 
 ## Summary of final dataset
 summary(enve_test)
@@ -751,10 +755,26 @@ A brief EDA analysis of the years variable, using a facet plot of the bivariate 
 
 ```{r years-plots}
 
-enve_test %>%
-    select(extortions, years, yearsquant, years_deciles) -> gg_ext_years
+enve_final %>%
+    select(extortions, years, yearsquant) %>%
+    mutate("All years" = "All years")-> gg_ext_years1
+
+melt(gg_ext_years1, 
+     id.vars = c("extortions", "years"), 
+     value.name = "yearsquant") -> gg_ext_years1
+
+enve_final %>%
+    select(extortions, years, years_deciles) %>%
+    mutate("All years" = "All years")-> gg_ext_years2
+
+melt(gg_ext_years2, 
+     id.vars = c("extortions", "years"), 
+     value.name = "years_deciles") -> gg_ext_years2
+
+cbind(gg_ext_years1, years_deciles = gg_ext_years2$years_deciles) -> gg_ext_years
 
 
+gg_ext_years <- select(gg_ext_years, -variable)
 
 years_scatterplots <- ggplot(gg_ext_years, aes(x = years, y = extortions))
 
@@ -824,7 +844,14 @@ state_incidents_df %>%
 
 state_gini <- by(enve_final$extortions, enve_final$NOM_ENT, ineq::Gini)
 
+
 state_gini_df <- data.frame(Gini = state_gini[1:32])
+
+state_gini_victims <- by(enve_final$extortions[enve_final$extortions > 0],
+                         enve_final$NOM_ENT[enve_final$extortions > 0],
+                         ineq::Gini)
+
+state_gini_df$Gini_vic <- data.frame(state_gini_victims[1:32])[,1]
 
 state_gini_df$NOM_ENT <- as.factor(rownames(state_gini_df))
 
@@ -832,7 +859,7 @@ state_gini_tests <- by(enve_final$extortions, enve_final$NOM_ENT, mc_gini_test)
 
 state_mc_gini_l <- lapply(state_gini_tests[1:32], function(x) x$mc_mean)
 
-state_mc_gini_df <- data.frame(`Poisson Gini`= unlist(state_mc_gini_l))
+state_mc_gini_df <- data.frame(P.Gini= unlist(state_mc_gini_l))
 
 rownames(state_mc_gini_df) <- names(state_mc_gini_l)
 
@@ -844,11 +871,28 @@ state_mc_gini_hyp <- sapply(state_gini_tests[1:32],
 
 unlist(state_mc_gini_hyp) -> state_mc_gini_df$test
 
+#### now mc gini test for victims
+
+state_gini_vic_tests <- by(enve_final$extortions[enve_final$extortions > 0],
+                         enve_final$NOM_ENT[enve_final$extortions > 0],
+                         mc_gini_test)
+
+state_mc_gini_vic_l <- lapply(state_gini_vic_tests[1:32], function(x) x$mc_mean)
+
+state_mc_gini_df$P.Gini.vic <- data.frame(unlist(state_mc_gini_vic_l))[,1]
+
+state_mc_gini_vic_hyp <- sapply(state_gini_vic_tests[1:32], 
+                            function(x) if(x$mc_test == TRUE) "***" 
+                                        else "")
+
+unlist(state_mc_gini_vic_hyp) -> state_mc_gini_df$vic.test
+
 state_summary %>%
     left_join(state_gini_df) %>%
     left_join(state_mc_gini_df) -> state_summary
 
 state_summary$Gini <- as.numeric(unname(state_summary$Gini))
+state_summary$Gini_vic <- as.numeric(unname(state_summary$Gini_vic))
 
 kable(state_summary, format = "pandoc", digits = 3)
 
@@ -895,7 +939,7 @@ To do tomorrow:
 - Test
 - Send
 
-- Exclude subsectors with few observations!! 
+- ~Exclude subsectors with few observations!!~
 - Remove package loading from here
 - Then let's start adding the models, as including new state-level variables, would probably have to rerun all of them
 - Also, will need to run ZIP and hurdle. should optimise the modelling strategy, as we know it can be extremely time consuming. (should probably exclude cols with NAs to avoid errors), will attempt all with glmmadmb.
