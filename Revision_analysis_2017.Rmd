@@ -53,12 +53,14 @@ library(foreign)
 library(ggplot2)
 library(Cairo)
 library(knitr)
-#library(texreg)
-library(lme4)
+library(texreg)
+#library(lme4)
 library(glmmADMB)
 library(classInt)
 library(dplyr)
 library(reshape2)
+library(lmtest)
+library(car)
 ```
 
 
@@ -773,6 +775,17 @@ melt(gg_ext_years2,
 
 cbind(gg_ext_years1, years_deciles = gg_ext_years2$years_deciles) -> gg_ext_years
 
+gg_ext_years$yearsquant <- factor(gg_ext_years$yearsquant)
+
+gg_ext_years$yearsquant <- relevel(gg_ext_years$yearsquant, ref = "All years")
+
+gg_ext_years$yearsquant <- factor(gg_ext_years$yearsquant, 
+                                  levels = c("All years", levels(enve_final$yearsquant)))
+
+gg_ext_years$years_deciles <- relevel(gg_ext_years$years_deciles, ref = "All years")
+
+gg_ext_years$years_deciles <- factor(gg_ext_years$years_deciles, 
+                                  levels = c("All years", levels(enve_final$years_deciles)))
 
 gg_ext_years <- select(gg_ext_years, -variable)
 
@@ -848,6 +861,51 @@ years_scatterplots +
     theme_bw() + 
     facet_wrap(~ years_deciles, scales = "free_x") + 
     geom_smooth(method = "lm")
+
+## wrap grid victims not a victim
+gg_ext_years$victim <- ifelse(gg_ext_years$extortions > 0, "yes", "no")
+
+gg_ext_years$pop <- "All businesses"
+
+subset(gg_ext_years, victim == "yes") -> gg_ext_years_tmp
+
+gg_ext_years_tmp$pop <- "Victims"
+
+rbind(gg_ext_years, gg_ext_years_tmp) -> gg_ext_years
+
+select(gg_ext_years, - victim) -> gg_ext_years
+
+years_scatterplots <- ggplot(gg_ext_years,
+                             aes(x = years, y = extortions))
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_grid(pop ~ yearsquant, scales = "free_x") + 
+    geom_smooth(method = "lm")
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_grid(pop ~ years_deciles, scales = "free_x") + 
+    geom_smooth(method = "lm")
+
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_grid(pop ~ . , scales = "free_x") + 
+    geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE)
+
+years_scatterplots <- ggplot(subset(gg_ext_years, yearsquant != "All years"),
+                             aes(x = years, y = extortions))
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_grid(pop ~ . , scales = "free_x") + 
+    geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE)
+
 
 ```
 
@@ -983,9 +1041,433 @@ kable(bribe_test, format = "pandoc")
 
 ```
 
+# Models
+
+There are two important changes to this modelling exercise. First, I am testing the influence of new state level variables that had not been previosly considered, as well as see if using years_deciles provides a better variable that yearsquant. Second, I will model extortion via two part models, using zero-inflated negative binomial and hurdle models. As the multilevel ZINB can only calculate a fixed zero-inflation factor (i.e. it is not poissbile to specify a separate equation for the zero-inflation part), I will focus on the hurdle models instead, testing hypotheses using these models.
+
+## Model data frame
+
+To avoid any problems with NA values that may lead to non-convergence, work with a data set onf only the relevant variables.
+
+```{r model-data-frame}
+
+enve_final %>%
+    select(extortions,
+           bribes,
+           yearsquant,
+           years_deciles,
+           subsector,
+           size,
+           log_deaths,
+           log_bribe_vic,
+           log_drug_crim,
+           log_wpn_crim,
+           law_index,
+           comp_index,
+           log_pop,
+           log_nbus,
+           state = NOM_ABR) -> enve_model
+
+#### JUST FOR THIS TESTING EXERCISE, ADD MORE VICTIMS TO THE OTHER AND MEDIA CATEGORY
+
+##### Comment out before sending #####
+
+enve_model$extortions[which(enve_model$subsector == "Other")] <- c(rep(1, 5), rep(0, 5))
+
+enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
+
+##### Comment out before sending #####
+
+##### Return to normal
+
+
+enve_model$extortion_victim <- ifelse(enve_model$extortions == 0, 0, 1)
+
+summary(enve_model)
+
+summary(factor(enve_model$extortion_victim))
+summary(factor(enve_final$extortion_victim))
+
+length(enve_model[is.na(enve_model)])
+
+
+```
+
+
+## Negative binomial
+
+I will not test every single model as before, as we have done this before. Thus I will start with the "best model" from previous exercises, changing the state homicide rate for the log deaths and log pop variables instead. To minimise any syntax mistakes, I will work with formula objects and update them as I proceed.
+
+```{r main-formula}
+
+count_formula <- as.formula("extortions ~ 
+                            bribes + 
+                            yearsquant + 
+                            subsector + 
+                            size + 
+                            (1 | state)")
+
+binary_formula <- as.formula("extortion_victim ~ 
+                            bribes + 
+                            yearsquant + 
+                            subsector + 
+                            size + 
+                            (1 | state)")
+
+```
+
+```{r multilevel-negative-binomial}
+
+mnb1 <- glmmadmb(count_formula, data = enve_model, family = "nbinom", zeroInflation=FALSE)
+
+summary(mnb1)
+
+get_glmmadmb(mnb1)
+
+# vs Poisson
+
+mp1 <- glmmadmb(count_formula, data = enve_model, family = "poisson", zeroInflation=FALSE)
+
+summary(mp1)
+
+get_glmmadmb(mp1)
+
+screenreg(list(mnb1, mp1), single.row = TRUE,
+          custom.model.names = c("negbin", "poisson"))
+
+lrtest(mp1, mnb1)
+
+# vs single level nb
+
+nb1 <- update(mnb1, . ~ . - (1 | state))
+
+summary(nb1)
+
+get_glmmadmb(nb1)
+
+screenreg(list(mnb1, nb1), single.row = TRUE,
+          custom.model.names = c("multilevel nb", "single level nb"))
+
+lrtest(nb1, mnb1)
+
+vif(mnb1)
+
+lm1 <- lm(update(count_formula, . ~ . - (1 | state)), data = enve_model)
+
+summary(lm1)
+
+vif(lm1)
+
+mnb1_drop <- drop1(mnb1, test = "Chisq")
+
+mnb1_drop
+
+# NB null, multi and one level
+
+nb_null <- update(mnb1, . ~ 1)
+
+summary(nb_null)
+get_glmmadmb(nb_null)
+
+lrtest(nb_null, nb1)
+
+lrtest(nb_null, mnb1)
+
+mnb_null <- update(mnb1, . ~ 1 + (1 | state))
+
+summary(mnb_null)
+get_glmmadmb(mnb_null)
+
+lrtest(nb_null, mnb_null)
+
+lrtest(mnb_null, mnb1)
+
+
+```
+
+```{r negative-binomial-years_deciles}
+
+mnb2 <- update(mnb1, . ~ . - yearsquant + years_deciles)
+
+summary(mnb2)
+
+get_glmmadmb(mnb2)
+
+screenreg(list(mnb1, mnb2), single.row = TRUE,
+          custom.model.names = c("year qunitiles", "year deciles"))
+
+```
+
+Now start introducing the state-level variables. First, log deaths, then the saturated model, then test them. Also run excluding all business-level and compare.
+
+```{r mnb-log_deaths}
+
+mnb3 <- update(mnb1, . ~ . + log_deaths + log_pop)
+
+summary(mnb3)
+get_glmmadmb(mnb3)
+
+lrtest(mnb1, mnb3)
+
+vif(mnb3)
+
+lm2 <- update(lm1, . ~ . + log_deaths + log_pop)
+
+vif(lm2)
+
+# drop pop
+
+mnb4 <- update(mnb3, . ~ . - log_pop)
+
+summary(mnb4)
+get_glmmadmb(mnb4)
+
+lrtest(mnb1, mnb4, mnb3)
+
+vif(mnb4)
+
+lm3 <- update(lm2, . ~ . - log_pop)
+
+vif(lm3)
+
+# drop deaths
+
+mnb5 <- update(mnb3, . ~ . - log_deaths)
+
+summary(mnb5)
+get_glmmadmb(mnb5)
+
+lrtest(mnb1, mnb5, mnb3)
+
+vif(mnb5)
+
+lm4 <- update(lm2, . ~ . - log_deaths)
+
+vif(lm4)
+
+####
+screenreg(list(negbin = mnb1, 
+               "deaths + pop" = mnb3,
+               "deaths" = mnb4,
+               "pop" = mnb5), 
+          single.row = TRUE)
+
+```
+
+```{r mnb-state-bribes}
+
+mnb6 <- update(mnb1, . ~ . + log_bribe_vic + log_nbus)
+
+summary(mnb6)
+get_glmmadmb(mnb6)
+
+vif(mnb6)
+
+lm5 <- update(lm1, . ~ . + log_bribe_vic + log_nbus)
+vif(lm5)
+
+# drop nbus
+
+mnb7 <- update(mnb1, . ~ . + log_bribe_vic)
+
+summary(mnb7)
+get_glmmadmb(mnb7)
+
+vif(mnb7)
+
+lm6 <- update(lm5, . ~ . - log_nbus)
+vif(lm5)
+
+lrtest(mnb1, mnb7, mnb6)
+
+# test vs business-level bribes
+
+mnb8 <- update(mnb6, . ~ . - bribes)
+
+summary(mnb8)
+get_glmmadmb(mnb8)
+
+vif(mnb8)
+
+lrtest(mnb8, mnb6)
+
+mnb9 <- update(mnb7, . ~ . - bribes)
+
+summary(mnb9)
+get_glmmadmb(mnb9)
+
+vif(mnb9)
+
+mnb10 <- update(mnb1, . ~ . - bribes)
+
+summary(mnb10)
+get_glmmadmb(mnb10)
+
+vif(mnb10)
+
+lrtest(mnb10, mnb1, mnb7, mnb6)
+
+screenreg(list("no bribes" = mnb10, 
+               "bus bribes" = mnb1, 
+               "b + s bribes" = mnb7,
+               "bs_bribes + nbus" = mnb6), 
+          single.row = TRUE)
+
+lrtest(mnb10, mnb9, mnb8, mnb6)
+
+
+screenreg(list("no bribes" = mnb10, 
+               "state bribes" = mnb9, 
+               "s bribes + nbus" = mnb8,
+               "bs_bribes + nbus" = mnb6), 
+          single.row = TRUE)
+
+## Include with log_deaths and pop
+
+mnb11 <- update(mnb3, . ~ . + log_bribe_vic + log_nbus)
+
+summary(mnb11)
+get_glmmadmb(mnb11)
+
+vif(mnb11)
+
+lm7 <- update(lm2, . ~ . + log_bribe_vic + log_nbus)
+vif(lm7)
+
+mnb12 <- update(mnb11,  . ~ . - log_nbus)
+
+summary(mnb12)
+get_glmmadmb(mnb12)
+
+vif(mnb12)
+
+lm8 <- update(lm7, . ~ . - log_nbus)
+vif(lm8)
+
+lrtest(mnb3, mnb12, mnb11)
+
+screenreg(list("deaths + pop" = mnb3,
+               "+ s bribes" = mnb12, 
+               "+ nbus" = mnb11),
+          single.row = TRUE)
+
+
+```
+
+```{r mnb-state-level-fed-wpn-crimes}
+
+# firearms related federal crimes
+
+mnb13 <- update(mnb1, . ~ . + log_wpn_crim)
+
+summary(mnb13)
+get_glmmadmb(mnb13)
+
+vif(mnb13)
+
+lrtest(mnb1, mnb13)
+
+mnb14 <- update(mnb4, . ~ . + log_wpn_crim)
+
+summary(mnb14)
+get_glmmadmb(mnb14)
+
+vif(mnb14)
+vif(mnb14)^2
+
+lm9 <- update(lm3, . ~ . + log_wpn_crim)
+vif(lm9)
+vif(lm9)^2
+
+
+mnb15 <- update(mnb3, . ~ . + log_wpn_crim)
+
+summary(mnb15)
+get_glmmadmb(mnb15)
+
+vif(mnb15)
+vif(mnb15)^2
+
+lm10 <- update(lm2, . ~ . + log_wpn_crim)
+vif(lm10)
+vif(lm10)^2
+
+lrtest(mnb4, mnb14, mnb15)
+
+lrtest(mnb3, mnb15)
+
+
+# droping deaths
+
+mnb16 <- update(mnb15, . ~ . - log_deaths)
+
+summary(mnb16)
+get_glmmadmb(mnb16)
+
+vif(mnb16)
+vif(mnb16)^2
+
+lm11 <- update(lm10, . ~ . - log_deaths)
+vif(lm11)
+vif(lm11)^2
+
+lrtest(mnb5 ,mnb16, mnb15)
+
+lrtest(mnb13, mnb16)
+
+screenreg(list("No state" = mnb1, 
+               "deaths" = mnb4, 
+               "deaths +  pop" = mnb3,
+               "wpns" = mnb13,
+               "wpns + dth" = mnb14,
+               "wpns + pop" = mnb16,
+               "wpns + dth + pop" = mnb15),
+          single.row = FALSE)
+
+## include state bribes var
+
+mnb17 <- update(mnb16, . ~ . + log_bribe_vic)
+
+summary(mnb17)
+get_glmmadmb(mnb17)
+
+vif(mnb17)
+
+mnb18 <- update(mnb17, . ~ . + log_nbus)
+
+summary(mnb18)
+get_glmmadmb(mnb18)
+
+vif(mnb18)
+
+lrtest(mnb16, mnb17, mnb18)
+
+mnb19 <- update(mnb17, . ~ . - log_pop)
+
+summary(mnb19)
+get_glmmadmb(mnb19)
+
+lrtest(mnb19, mnb16)
+
+screenreg(list("no state" = mnb1,
+               "wpns + pop" = mnb16,
+               "+ s bribes" = mnb17,
+               "+ nbus" = mnb18,
+               "wpns + s bribes" = mnb19),
+          single.row = TRUE)
+
+```
+
+```{r mnb-state-level-fed-wpn-crimes}
+
+## Aqui estoy
+
+```
+# to do 
+
 To do tomorrow:
 
-- Move on to models
+- Move on to models ZIP and hurdle models
 - Test
 - Send
 
