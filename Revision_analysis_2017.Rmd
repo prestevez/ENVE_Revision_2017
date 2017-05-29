@@ -799,6 +799,56 @@ years_scatterplots +
     facet_wrap(~ years_deciles, scales = "free_x") + 
     geom_smooth(method = "lm")
 
+# Excluding the all business line
+
+years_scatterplots <- ggplot(subset(gg_ext_years, yearsquant != "All years"),
+                             aes(x = years, y = extortions))
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    geom_smooth(method = "lm", aes(colour = yearsquant))
+
+## Only for victims
+
+years_scatterplots <- ggplot(subset(gg_ext_years, yearsquant != "All years" & 
+                                        extortions > 0),
+                             aes(x = years, y = extortions))
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE) 
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE) +
+    scale_x_sqrt()
+
+
+# Only for victims with a grid
+
+years_scatterplots <- ggplot(subset(gg_ext_years, extortions > 0),
+                             aes(x = years, y = extortions))
+
+
+# Quintiles
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_wrap(~ yearsquant, scales = "free_x") + 
+    geom_smooth(method = "lm")
+
+# For deciles
+
+years_scatterplots + 
+    geom_point() + 
+    theme_bw() + 
+    facet_wrap(~ years_deciles, scales = "free_x") + 
+    geom_smooth(method = "lm")
+
 ```
 
 # State level
