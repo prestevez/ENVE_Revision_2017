@@ -1356,7 +1356,7 @@ screenreg(list("deaths + pop" = mnb3,
 
 ```{r mnb-state-level-fed-wpn-crimes}
 
-# firearms related federal crimes
+# firearms-related federal crimes
 
 mnb13 <- update(mnb1, . ~ . + log_wpn_crim)
 
@@ -1440,6 +1440,21 @@ get_glmmadmb(mnb18)
 
 vif(mnb18)
 
+lm12 <- update(lm10, . ~ . + log_bribe_vic)
+
+vif(lm12)
+vif(lm12)^2
+
+lm13 <- update(lm12, . ~ . + log_nbus)
+
+vif(lm13)
+vif(lm13)^2
+
+lm14 <- update(lm13, . ~ . - log_deaths)
+
+vif(lm14)
+vif(lm14)^2
+
 lrtest(mnb16, mnb17, mnb18)
 
 mnb19 <- update(mnb17, . ~ . - log_pop)
@@ -1456,11 +1471,88 @@ screenreg(list("no state" = mnb1,
                "wpns + s bribes" = mnb19),
           single.row = TRUE)
 
+
 ```
 
-```{r mnb-state-level-fed-wpn-crimes}
+```{r mnb-state-level-fed-drug-crimes}
 
-## Aqui estoy
+# drugs-related federal crimes
+
+mnb20 <- update(mnb18, . ~ . + log_drug_crim)
+
+summary(mnb20)
+get_glmmadmb(mnb20)
+vif(mnb20)
+
+lm15 <- update(lm14, . ~ . + log_drug_crim)
+vif(lm15)
+vif(lm15)^2
+
+lrtest(mnb18, mnb20)
+
+# drop log_wpn_crim
+
+mnb21 <- update(mnb20, . ~ . - log_wpn_crim)
+
+summary(mnb21)
+get_glmmadmb(mnb21)
+
+vif(mnb21)
+vif(mnb21)^2
+
+lm16 <- update(lm15, . ~ . - log_wpn_crim)
+vif(lm16)
+vif(lm16)^2
+
+lrtest(mnb21, mnb20)
+
+# drop log_drug_crim
+
+mnb22 <- update(mnb21, . ~ . -  log_pop)
+
+summary(mnb22)
+get_glmmadmb(mnb22)
+
+mnb23 <- update(mnb22, . ~ . - log_drug_crim)
+
+lrtest(mnb23, mnb22, mnb21)
+
+# include deaths 
+
+mnb24 <- update(mnb20, . ~ . + log_deaths)
+summary(mnb24)
+get_glmmadmb(mnb24)
+
+vif(mnb24)
+vif(mnb24)^2
+
+lm17 <- update(lm15, . ~ . + log_deaths)
+vif(lm17)
+vif(lm17)^2
+
+# no fed crimes 
+
+mnb25 <- update(mnb18, . ~ . - log_wpn_crim)
+summary(mnb25)
+get_glmmadmb(mnb25)
+
+vif(mnb25)
+
+mnb26 <- update(mnb20, . ~ . -  log_pop)
+
+summary(mnb26)
+get_glmmadmb(mnb26)
+
+lrtest(mnb25, mnb20)
+
+
+screenreg(list("no fed" = mnb25,
+               "- drug + wpn" = mnb18,
+               "+ drug - wpn" = mnb21,
+               "+ drug + wpn - pop " = mnb26,
+               "+ drug + wpn + pop" = mnb20),
+          single.row = TRUE)
+
 
 ```
 # to do 
