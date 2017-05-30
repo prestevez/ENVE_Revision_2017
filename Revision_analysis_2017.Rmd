@@ -1555,6 +1555,44 @@ screenreg(list("no fed" = mnb25,
 
 
 ```
+
+
+Controls: Competitive index
+
+- Include both, drop 1, test
+- both + homicides, test
+
+
+```{r mnb-index-controls}
+
+## controls: competitive index
+
+
+
+
+```
+
+Final spec:
+- business_level + sbribes, wpn, drug, nbus, pop, index1, index2
+    - vif
+- test: remove controls
+- test: remove business_level vars (multi and single level)
+- test: full, single and multilevel spec
+- test: include deaths
+- MNB vs MP
+
+```{r mnb-final-spec}
+
+
+
+```
+
+## Zero-inflated models
+
+
+## Hurdle models
+
+
 # to do 
 
 To do tomorrow:
