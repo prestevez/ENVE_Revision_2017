@@ -61,6 +61,7 @@ library(dplyr)
 library(reshape2)
 library(lmtest)
 library(car)
+library(pscl)
 ```
 
 
@@ -1567,8 +1568,76 @@ Controls: Competitive index
 
 ## controls: competitive index
 
+mnb27 <- update(mnb20, . ~ . + comp_index)
 
+summary(mnb27)
+get_glmmadmb(mnb27)
 
+lrtest(mnb20, mnb27)
+
+vif(mnb27)
+vif(mnb27)^2
+
+lm18 <- update(lm15, . ~ . + comp_index)
+vif(lm18)
+vif(lm18)^2
+
+# control: rule of law index
+
+mnb28 <- update(mnb27, . ~ . + law_index)
+
+summary(mnb28)
+get_glmmadmb(mnb28)
+
+lrtest(mnb27, mnb28)
+
+lrtest(mnb20, mnb28)
+
+vif(mnb28)
+vif(mnb28)^2
+
+lm19 <- update(lm18, . ~ . + law_index)
+vif(lm19)
+vif(lm19)^2
+
+## dropping comp_index and keeping law index
+
+mnb29 <- update(mnb28, . ~ . - comp_index)
+
+summary(mnb29)
+get_glmmadmb(mnb29)
+
+lrtest(mnb20, mnb29)
+
+vif(mnb29)
+vif(mnb29)^2
+
+lm20 <- update(lm19, . ~ . - comp_index)
+vif(lm20)
+vif(lm20)^2
+
+## Including deaths
+
+mnb30 <- update(mnb28, . ~ . + log_deaths)
+
+summary(mnb30)
+get_glmmadmb(mnb30)
+
+lrtest(mnb28, mnb30)
+
+vif(mnb30)
+vif(mnb30)^2
+
+lm21 <- update(lm19, . ~ . + log_deaths)
+vif(lm21)
+vif(lm21)^2
+
+screenreg(list("no index" = mnb20,
+               "comp" = mnb27,
+               "law" = mnb29,
+               "comp + law" = mnb28,
+               "comp + law + deaths" = mnb30),
+          single.row = TRUE)
 
 ```
 
@@ -1583,15 +1652,285 @@ Final spec:
 
 ```{r mnb-final-spec}
 
+mnb_final <- mnb28
+
+summary(mnb_final)
+get_glmmadmb(mnb_final)
+
+vif(mnb_final)
+vif(mnb_final)^2
+
+# Test all state level vars
+lrtest(mnb1, mnb_final)
+
+# Test vs multilevel null
+
+mnb_null <- update(mnb_final, . ~ 1 + (1 | state))
+
+summary(mnb_null)
+get_glmmadmb(mnb_null)
+
+lrtest(mnb_null, mnb_final)
+
+# test vs sigle-level full and null
+
+nb_final <- update(mnb_final, . ~ . - (1 | state))
+
+summary(nb_final)
+get_glmmadmb(nb_final)
+
+lrtest(nb_final, mnb_final)
+
+nb_null <- update(nb_final, . ~ 1)
+
+summary(nb_null)
+get_glmmadmb(nb_null)
+
+lrtest(nb_null, mnb_null)
+
+lrtest(nb_null, mnb_final)
+
+lrtest(nb_null, nb_final)
+
+# Only state vars
+
+mnb_only_state <- update(mnb_null, . ~ . + log_pop + log_wpn_crim + log_drug_crim +
+                             log_bribe_vic + log_nbus + comp_index + law_index)
+
+summary(mnb_only_state)
+get_glmmadmb(mnb_only_state)
+
+nb_only_state <- update(mnb_only_state, . ~ . - (1 | state))
+
+summary(nb_only_state)
+get_glmmadmb(nb_only_state)
+
+lrtest(nb_only_state, mnb_only_state)
+
+vif(nb_only_state)
+
+lm_only_state <- update(lm1, formula(nb_only_state))
+
+vif(lm_only_state)
+
+## No controls
+
+mnb_noc <- update(mnb_final, . ~ . - log_pop - log_nbus - comp_index -
+                      law_index)
+
+summary(mnb_noc)
+get_glmmadmb(mnb_noc)
+
+vif(mnb_noc)
+vif(mnb_noc)^2
+
+lm_noc <- update(lm1, update(formula(mnb_noc), . ~ . - (1 | state)))
+
+vif(lm_noc)
+vif(lm_noc)^2
+
+screenreg(list("MNB" = mnb_final,
+               "No state vars" = mnb1,
+               "Only state vars" = mnb_only_state,
+               "No controls" = mnb_noc,
+               "Null" = mnb_null,
+               "NB null" = nb_null))
+
+## Including deaths
+
+mnb_f_deaths <- update(mnb_final, . ~ . + log_deaths)
+summary(mnb_f_deaths)
+get_glmmadmb(mnb_f_deaths)
+
+lrtest(mnb_final, mnb_f_deaths)
+
+vif(mnb_f_deaths)
+vif(mnb_f_deaths)^2
+
+lm_f_deaths <- lm(update(formula(nb_final), . ~ . +  log_deaths), 
+                  data = enve_model)
+vif(lm_f_deaths)
+vif(lm_f_deaths)^2
+
+screenreg(list("MNB" = mnb_final,
+          "With deaths" = mnb_f_deaths),
+          single.row = TRUE)
+
+
+
+## Vs Poisson
+
+mp_final <- glmmadmb(formula(mnb_final), family = "poisson", zeroInflation = FALSE,
+                     data = enve_model)
+summary(mp_final)
+get_glmmadmb(mp_final)
+
+lrtest(mp_final, mnb_final)
+
+screenreg(list("MNB" = mnb_final, "M Poisson" = mp_final), single.row = TRUE)
+
+
 
 
 ```
 
 ## Zero-inflated models
 
+Multilevel zero inflated using glmmadmb
+- fully specified: MZINB vs MNB vs MZIP
+- null: MZINB vs MNB
+- Full and null: MZINB vs ZINB
+- No state: MZINB vs MNB
+- No bus: MZINB vs MNB
+
+```{r mzinb-glmmadmb}
+
+mzinb_full <- glmmadmb(formula(mnb_final), data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE)
+
+summary(mzinb_full)
+get_glmmadmb(mzinb_full)
+
+lrtest(mnb_final, mzinb_full)
+
+mzip_full <- glmmadmb(formula(mnb_final), data = enve_model,
+                       family = "poisson", zeroInflation = TRUE)
+
+summary(mzip_full)
+get_glmmadmb(mzip_full)
+
+lrtest(mzip_full, mzinb_full)
+
+zinb_full <- update(mzinb_full, . ~ . - (1 | state))
+
+summary(zinb_full)
+get_glmmadmb(zinb_full)
+
+lrtest(zinb_full, mzinb_full)
+
+
+screenreg(list("MNB" = mnb_final,
+               "MZINB" = mzinb_full,
+               "MZIP" = mzip_full,
+               "ZINB" = zinb_full),
+          single.row = TRUE)
+
+# Dropping state vars
+
+mzinb_no_state <- glmmadmb(formula(mnb1), data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE)
+
+summary(mzinb_no_state)
+get_glmmadmb(mzinb_no_state)
+
+lrtest(mzinb_no_state, mzinb_full)
+
+# Dropping bus vars
+
+mzinb_only_state <- glmmadmb(formula(mnb_only_state), data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE)
+
+summary(mzinb_only_state)
+get_glmmadmb(mzinb_only_state)
+
+lrtest(mzinb_only_state, mzinb_full)
+
+screenreg(list("MZINB Full" = mzinb_full,
+               "No state" = mzinb_no_state,
+               "No bus" = mzinb_only_state), 
+          single.row = TRUE)
+
+## Null models: MZINB vs MNB
+
+mzinb_null <- update(mzinb_full, . ~ 1 + (1 | state))
+
+summary(mzinb_null)
+get_glmmadmb(mzinb_null)
+
+lrtest(mzinb_null, mnb_null)
+
+## Null models: MZINB vs ZINB
+
+zinb_null <- update(zinb_full, . ~ 1)
+
+summary(zinb_null)
+get_glmmadmb(zinb_null)
+
+lrtest(zinb_null, mzinb_null)
+
+
+screenreg(list("MNB Null" = mnb_null,
+               "MZINB Null" = mzinb_null,
+               "ZINB Null" = zinb_null),
+          single.row = TRUE)
+```
+
+Single level ZINB using glmmadmb
+- fully specified: ZINB vs NB vs ZIP
+- null: ZINB vs NB
+- No state: ZINB vs NB
+- No bus: ZINB vs NB
+
+```{r zinb-glmmadmb}
+
+lrtest(nb_final, zinb_full)
+
+zip_full <- update(mzip_full, . ~ . - (1 | state))
+summary(zip_full)
+get_glmmadmb(zip_full)
+
+lrtest(zip_full, zinb_full)
+
+lrtest(nb_null, zinb_null)
+
+# no state
+
+zinb_no_state <- glmmadmb(formula(nb1), data = enve_model,
+                          family = "nbinom", zeroInflation = TRUE)
+
+summary(zinb_no_state)
+get_glmmadmb(zinb_no_state)
+
+lrtest(nb1, zinb_no_state)
+
+# no business level measurements
+
+zinb_only_state <- glmmadmb(formula(nb_only_state), data = enve_model,
+                          family = "nbinom", zeroInflation = TRUE)
+
+summary(zinb_only_state)
+get_glmmadmb(zinb_only_state)
+
+lrtest(nb_only_state, zinb_only_state)
+
+```
+
+
+Single level ZINB using pscl
+- fully specified: ZINB vs MNB vs ZIP
+- null: ZINB vs NB
+- No state: ZINB vs NB
+- No bus: ZINB vs NB
+
+- Different equation for zero inflation
+- count: business level, zero: state level
+- count: state level, zero: business level
+- count: business bribe, zero: state bribe
+
+
+
+```{r zinb-pscl}
+
+```
+
+
 
 ## Hurdle models
 
+First prepare data sets
+
+```{r hurdle-data}
+```
 
 # to do 
 
@@ -1603,8 +1942,7 @@ To do tomorrow:
 
 - ~Exclude subsectors with few observations!!~
 - Remove package loading from here
-- Then let's start adding the models, as including new state-level variables, would probably have to rerun all of them
-- Also, will need to run ZIP and hurdle. should optimise the modelling strategy, as we know it can be extremely time consuming. (should probably exclude cols with NAs to avoid errors), will attempt all with glmmadmb.
+- Remove subsector fake data added for testing only
 
 
 ```{r endtime}
