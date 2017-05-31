@@ -1073,7 +1073,8 @@ enve_final %>%
 
 ##### Comment out before sending #####
 
-enve_model$extortions[which(enve_model$subsector == "Other")] <- c(rep(1, 5), rep(0, 5))
+enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
+
 
 enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
 
@@ -1102,13 +1103,6 @@ I will not test every single model as before, as we have done this before. Thus 
 ```{r main-formula}
 
 count_formula <- as.formula("extortions ~ 
-                            bribes + 
-                            yearsquant + 
-                            subsector + 
-                            size + 
-                            (1 | state)")
-
-binary_formula <- as.formula("extortion_victim ~ 
                             bribes + 
                             yearsquant + 
                             subsector + 
@@ -1840,6 +1834,16 @@ screenreg(list("MZINB Full" = mzinb_full,
                "No bus" = mzinb_only_state), 
           single.row = TRUE)
 
+# include deaths
+
+mzinb_deaths<- update(mzinb_full, . ~ . + log_deaths)
+
+summary(mzinb_deaths)
+get_glmmadmb(mzinb_deaths)
+
+lrtest(mzinb_full, mzinb_deaths)
+
+
 ## Null models: MZINB vs MNB
 
 mzinb_null <- update(mzinb_full, . ~ 1 + (1 | state))
@@ -1907,19 +1911,111 @@ lrtest(nb_only_state, zinb_only_state)
 
 
 Single level ZINB using pscl
-- fully specified: ZINB vs MNB vs ZIP
-- null: ZINB vs NB
-- No state: ZINB vs NB
-- No bus: ZINB vs NB
-
 - Different equation for zero inflation
 - count: business level, zero: state level
 - count: state level, zero: business level
-- count: business bribe, zero: state bribe
-
 
 
 ```{r zinb-pscl}
+
+zi_formula <- as.formula(extortions ~ 
+                             bribes + 
+                             yearsquant + 
+                             subsector +
+                             size + 
+                             log_pop + 
+                             log_wpn_crim + 
+                             log_bribe_vic + 
+                             log_nbus + 
+                             log_drug_crim + 
+                             comp_index + 
+                             law_index | 1)
+
+zinb_pscl_simple_full <- zeroinfl(zi_formula, data = enve_model,
+                                  dist = "negbin")
+summary(zinb_pscl_simple_full)
+
+lrtest(nb_final, zinb_pscl_simple_full)
+
+nb_mass_final <- glm.nb(formula(nb_final), data = enve_model)
+
+summary(nb_mass_final)
+
+lrtest(nb_mass_final, zinb_pscl_simple_full)
+vuong(nb_mass_final, zinb_pscl_simple_full)
+
+zi_formula <- as.formula(extortions ~ 
+                             bribes + 
+                             yearsquant + 
+                             subsector +
+                             size + 
+                             log_pop + 
+                             log_wpn_crim + 
+                             log_bribe_vic + 
+                             log_nbus + 
+                             log_drug_crim + 
+                             comp_index + 
+                             law_index |
+                             bribes + 
+                             yearsquant + 
+                             subsector +
+                             size + 
+                             log_pop + 
+                             log_wpn_crim + 
+                             log_bribe_vic + 
+                             log_nbus + 
+                             log_drug_crim + 
+                             comp_index + 
+                             law_index)
+
+zinb_pscl_full <- zeroinfl(zi_formula, data = enve_model,
+                                  dist = "negbin")
+summary(zinb_pscl_full)
+
+lrtest(nb_final, zinb_pscl_full)
+
+lrtest(zinb_pscl_simple_full ,zinb_pscl_full)
+
+lrtest(nb_mass_final, zinb_pscl_full)
+vuong(nb_mass_final, zinb_pscl_full)
+
+## Constant on either side of equation
+
+zinb_pscl_nullc <- update(zinb_pscl_full, . ~ 1 | . )
+
+summary(zinb_pscl_nullc)
+
+lrtest(zinb_pscl_nullc, zinb_pscl_full)
+vuong(zinb_pscl_nullc, zinb_pscl_full)
+
+zinb_pscl_c_all_z_state <- update(zinb_pscl_full, . ~ . | . - bribes - 
+                             yearsquant - 
+                             subsector -
+                             size )
+
+summary(zinb_pscl_c_all_z_state)
+
+lrtest(zinb_pscl_simple_full, zinb_pscl_c_all_z_state)
+vuong(zinb_pscl_simple_full, zinb_pscl_c_all_z_state)
+
+zinb_pscl_c_state_l_z_all <- update(zinb_pscl_full, . ~ . - bribes - 
+                             yearsquant - 
+                             subsector -
+                             size | . )
+
+summary(zinb_pscl_c_state_l_z_all)
+
+lrtest(zinb_pscl_simple_full, zinb_pscl_c_state_l_z_all)
+vuong(zinb_pscl_simple_full, zinb_pscl_c_state_l_z_all)
+
+
+screenreg(list("ZINB Full" = zinb_pscl_full, 
+               "Count: Null" = zinb_pscl_nullc,
+               "Zero: Null" = zinb_pscl_simple_full,
+               "Zero: state" = zinb_pscl_c_all_z_state,
+               "Count: state" = zinb_pscl_c_state_l_z_all),
+          single.row = TRUE)
+
 
 ```
 
@@ -1930,17 +2026,159 @@ Single level ZINB using pscl
 First prepare data sets
 
 ```{r hurdle-data}
+
+enve_trunc <- subset(enve_model, extortions > 0)
+
 ```
 
-# to do 
+Multilevel Hurdle model using glmmadmb
+- fully specified: MHNB vs MNB 
+- Full: MHNB vs HNB
 
-To do tomorrow:
+Compare:
+- Binary: state; Count: all vs. Full
+- Binary: bus; Count: all vs. Full
+- Binary: all; Count: bus vs. Full
+- Binary: all; Count: state vs. Full
 
-- Move on to models ZIP and hurdle models
-- Test
-- Send
 
-- ~Exclude subsectors with few observations!!~
+```{r hurdle-models}
+
+binary_formula <- update(formula(mnb_final), extortion_victim ~ .)
+
+# Full, equal variable, hurdle models
+
+## Binary part first
+
+mlogit_full <- glmmadmb(binary_formula, data = enve_model, 
+                        family = "binomial")
+
+summary(mlogit_full)
+get_glmmadmb(mlogit_full)
+
+## Count part
+
+mtnb_full <- glmmadmb(formula(mnb_final), data = enve_trunc,
+                      family = "truncnbinom")
+
+summary(mtnb_full)
+get_glmmadmb(mtnb_full)
+
+
+### Compare joint IC with Full MNB and ZINB
+
+compare_hurdle2other(mlogit_full, mtnb_full, mnb_final, mzinb_full)
+
+
+screenreg(list("MNB" = mnb_final,
+               "MZINB" = mzinb_full,
+               "Logit" = mlogit_full, 
+               "Trunc. NB" = mtnb_full), 
+          single.row = TRUE)
+
+# Full, single level, equal equation hurdle
+
+## Binary part first
+
+logit_full <- update(mlogit_full, . ~ . - (1 | state))
+
+summary(logit_full)
+get_glmmadmb(logit_full)
+
+## Count part
+
+tnb_full <- update(mtnb_full, . ~ . - (1 | state))
+
+summary(tnb_full)
+get_glmmadmb(tnb_full)
+
+
+### Compare joint IC with Full NB and ZINB
+
+compare_hurdle2other(logit_full, tnb_full, nb_final, zinb_full)
+
+
+screenreg(list("NB" = nb_final,
+               "ZINB" = zinb_full,
+               "Logit" = logit_full, 
+               "Trunc. NB" = tnb_full), 
+          single.row = TRUE)
+
+## Compare two hurdle modles: multilevel vs single level
+
+hurdle_compare(joint_ic(logit_full, tnib_full), 
+               joint_ic(mlogit_full, mtnb_full),
+               modnames = c("Single level", "Multilevel"))
+
+# - Binary: state; Count: all vs. Full
+
+mlogit_state <- glmmadmb(formula(mnb_only_state), data = enve_model,
+                         family = "binomial")
+summary(mlogit_state)
+get_glmmadmb(mlogit_state)
+
+lrtest(mlogit_state, mlogit_full)
+
+# - Binary: bus; Count: all vs. Full
+
+mlogit_bus <- glmmadmb(formula(mnb1), data = enve_model,
+                         family = "binomial")
+summary(mlogit_bus)
+get_glmmadmb(mlogit_bus)
+
+lrtest(mlogit_bus, mlogit_full)
+
+# - Binary: all; Count: bus vs. Full
+
+mtnb_bus <- glmmadmb(formula(mnb1), data = enve_trunc,
+                      family = "truncnbinom")
+
+summary(mtnb_bus)
+get_glmmadmb(mtnb_bus)
+
+lrtest(mtnb_bus, mtnb_full)
+
+
+# - Binary: all; Count: state vs. Full
+
+mtnb_state <- glmmadmb(formula(mnb_only_state), data = enve_trunc,
+                      family = "truncnbinom")
+
+summary(mtnb_state)
+get_glmmadmb(mtnb_state)
+
+lrtest(mtnb_state, mtnb_full)
+
+
+# Binary with deaths
+
+mlogit_deaths <- update(mlogit_full, . ~ . + log_deaths)
+summary(mlogit_deaths)
+get_glmmadmb(mlogit_deaths)
+
+lrtest(mlogit_full, mlogit_deaths)
+
+# count with deaths
+
+mtnb_deaths <- update(mtnb_full, . ~ . + log_deaths)
+
+summary(mtnb_deaths)
+get_glmmadmb(mtnb_deaths)
+
+lrtest(mtnb_full, mtnb_deaths)
+
+# together with deaths
+
+hurdle_compare(joint_ic(mlogit_full, mtnb_full), 
+               joint_ic(mlogit_deaths, mtnb_deaths),
+               modnames = c("Full", "+ deaths"))
+
+compare_hurdle2other(mlogit_deaths, mtnb_deaths, mnb_f_deaths)
+
+```
+
+# Before sending for real
+
 - Remove package loading from here
 - Remove subsector fake data added for testing only
 
