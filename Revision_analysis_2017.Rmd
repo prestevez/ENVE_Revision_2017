@@ -41,14 +41,14 @@ options(scipen=0)
 
 Install custom package, requires `devtools`.
 
-```{r install-vicarp}
-# devtools::install_github("prestevez/vicarp")
+```{r install-victim}
+# devtools::install_github("prestevez/victim")
 ```
 
 Next we load the packages that we will use.
 
 ```{r packages}
-library(vicarp)
+library(victim)
 library(foreign)
 library(ggplot2)
 library(Cairo)
