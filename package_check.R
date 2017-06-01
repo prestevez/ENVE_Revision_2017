@@ -26,5 +26,5 @@ if(all(test))
 {
     not <- packages[which(test == FALSE)]
     cat(paste0("Packages not installed: ", not,
-                 ".\nPlease install them manually."))
+                 ". \nPlease install them manually."))
 }
