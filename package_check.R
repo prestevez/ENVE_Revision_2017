@@ -15,7 +15,8 @@ packages <- c("devtools",
               "reshape2",
               "lmtest",
               "car",
-              "pscl")
+              "pscl",
+              "coda")
 
 test <- packages %in% rownames(installed.packages())
 
