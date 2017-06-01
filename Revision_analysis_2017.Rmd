@@ -2,7 +2,7 @@
 title: "Repeat extortion of Mexican businesses: Revision analysis"
 author: "Patricio R. Estevez Soto"
 email: "patricio.estevez.14@ucl.ac.uk"
-date: "4/05/2016"
+date: "01/06/2017"
 output:
   md_document:
     variant: "markdown"
@@ -353,7 +353,7 @@ lapply(ext1_vicum, kable, format = "pandoc", digits = 3)
 
 ```{r extortions1-lorenz}
 
-lapply(extortion_columns1, victim_lorenz, 
+lapply(extortion_columns1, victim_lorenz,
        data = enve_final, family = "none")
 
 victim_lorenz("extortions", enve_final, family = "poisson")
@@ -383,7 +383,7 @@ ext_chisq_poiss
 ext_chisq_poiss_tb <- data.frame(ext_chisq_poiss$observed,
                                  Exp = ext_chisq_poiss$expected)[,c(1,2,4)]
 
-kable(ext_chisq_poiss_tb, format = "pandoc", digits = 3, 
+kable(ext_chisq_poiss_tb, format = "pandoc", digits = 3,
       caption = "Poisson expected counts")
 
 ext_chisq_nbinom <- chisq_count("extortions", data = enve_final, B = 2000,
@@ -394,7 +394,7 @@ ext_chisq_nbinom
 ext_chisq_nbinom_tb <- data.frame(ext_chisq_nbinom$observed,
                                  Exp = ext_chisq_nbinom$expected)[,c(1,2,4)]
 
-kable(ext_chisq_nbinom_tb, format = "pandoc", digits = 3, 
+kable(ext_chisq_nbinom_tb, format = "pandoc", digits = 3,
       caption = "Negative binomial expected counts")
 
 ## Neg Bin distribution parameters for extortion
@@ -448,29 +448,29 @@ lapply(extortion_columns_capped, victim_lorenz, data = enve_final,
 
 ```
 
-Now do some hypothesis testing 
+Now do some hypothesis testing
 
 ```{r capped-extortions-tests}
 
 lapply(extortion_columns_capped, mc_gini_test, data = enve_final,
-       family = "poisson", plots = TRUE) 
+       family = "poisson", plots = TRUE)
 
 lapply(extortion_columns_capped, mc_gini_test, data = enve_final,
-       family = "nbinom", plots = TRUE) 
+       family = "nbinom", plots = TRUE)
 
 dispersion_batch(extortion_columns_capped, enve_final, print_option = "pandoc")
 
-ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc", 
+ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc",
               family = "poisson")
 
-ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc", 
+ks_test_batch(extortion_columns_capped, enve_final, print_option = "pandoc",
               family = "nbinom")
 
 # poisson expected chisq
 
 ext_cap_chisq_p <- lapply(extortion_columns_capped, function(x)
 {
-    tryCatch(chisq_count(x, data = enve_final, B = 2000), 
+    tryCatch(chisq_count(x, data = enve_final, B = 2000),
              error = function(e) NULL)
 })
 
@@ -492,7 +492,7 @@ print_kables(ext_cap_p_tb)
 
 ext_cap_chisq_nb <- lapply(extortion_columns_capped, function(x)
 {
-    tryCatch(chisq_count(x, data = enve_final, B = 2000, family = "nbinom"), 
+    tryCatch(chisq_count(x, data = enve_final, B = 2000, family = "nbinom"),
              error = function(e) NULL)
 })
 
@@ -527,7 +527,7 @@ extortion_columns_estimated <- c("estTel",
                               "estRemote",
                               "estIn.person")
 
-extortion_dist_estimated <- lapply(extortion_columns_estimated, function(x) 
+extortion_dist_estimated <- lapply(extortion_columns_estimated, function(x)
                                 {
                                     if(mean(enve_final[,x]) == 0){message(paste0("skipping ", x, ". No obs."))}
                                     else{victim_table(x, data = enve_final, print_option = "pandoc")}
@@ -538,7 +538,7 @@ names(extortion_dist_estimated) <- extortion_columns_estimated
 extortion_dist_estimated
 
 
-extortion_dist_estimated_nfor <- lapply(extortion_columns_estimated, function(x) 
+extortion_dist_estimated_nfor <- lapply(extortion_columns_estimated, function(x)
                                 {
                                     if(mean(enve_final[,x]) == 0){message(paste0("skipping ", x, ". No obs."))}
                                     else{victim_table(x, data = enve_final, print_option = "none")}
@@ -551,7 +551,7 @@ ext_estim_vicum <- lapply(extortion_dist_estimated_nfor,
                               else {victim_cumulative(x)}}
                           )
 
-print_kables(lapply(ext_estim_vicum, 
+print_kables(lapply(ext_estim_vicum,
        function(x) {if(is.null(x)){message("skipping NULL objects")}
                     else {kable(x, format = "pandoc", digits = 3)}}))
 
@@ -580,27 +580,27 @@ lapply(extortion_columns_estimated, function(x)
 {
     tryCatch(mc_gini_test(x, data = enve_final, family = "poisson",
                           plots = TRUE), error = function(e) NULL)
-}) 
+})
 
 lapply(extortion_columns_estimated, function(x)
 {
     tryCatch(mc_gini_test(x, data = enve_final, family = "nbinom",
                           plots = TRUE), error = function(e) NULL)
-}) 
+})
 
 dispersion_batch(extortion_columns_estimated, enve_final, print_option = "pandoc")
 
-ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc", 
+ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc",
               family = "poisson")
 
-ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc", 
+ks_test_batch(extortion_columns_estimated, enve_final, print_option = "pandoc",
               family = "nbinom")
 
 # poisson expected chisq
 
 ext_est_chisq_p <- lapply(extortion_columns_estimated, function(x)
 {
-    tryCatch(chisq_count(x, data = enve_final, B = 2000), 
+    tryCatch(chisq_count(x, data = enve_final, B = 2000),
              error = function(e) NULL)
 })
 
@@ -626,8 +626,8 @@ print_kables(ext_est_p_tb)
 
 ext_est_chisq_nb <- lapply(extortion_columns_estimated, function(x)
 {
-    tryCatch(chisq_count(x, data = enve_final, B = 2000, 
-                         family = "nbinom"), 
+    tryCatch(chisq_count(x, data = enve_final, B = 2000,
+                         family = "nbinom"),
              error = function(e) NULL)
 })
 
@@ -686,10 +686,10 @@ summary(enve_final$iqv_simp)
 
 ## Contingency tables to extortion frequency
 
-batch_iqvs <- batch_chisq(enve_final, "extortions", 
+batch_iqvs <- batch_chisq(enve_final, "extortions",
                           c("iqv_long", "iqv_simp"))
 
-kable(chisq_tb(batch_iqvs, stars = TRUE), "pandoc", 
+kable(chisq_tb(batch_iqvs, stars = TRUE), "pandoc",
       caption = "Chi-squared tests between 'extortions' and 'IQVs'" )
 
 print_kables(chisq_list(batch_iqvs, option = "observed", print_option = "pandoc"))
@@ -716,7 +716,7 @@ ivs <- c("bribes",
 
 ext_p_batch_chsq <- batch_chisq(df = enve_final, DV = "extortion_victim", IV = ivs)
 
-kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc", 
+kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc",
       caption = "Chi-square tests between 'extortion prevalence' and a set of DV")
 
 print_kables(chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc"))
@@ -741,7 +741,7 @@ ivs <- c("bribes",
 
 ext_p_batch_chsq <- batch_chisq(df = enve_final, DV = "extortions", IV = ivs)
 
-kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc", 
+kable(chisq_tb(ext_p_batch_chsq, stars = TRUE), "pandoc",
       caption = "Chi-square tests between 'extortion counts' and a set of DV")
 
 print_kables(chisq_list(ext_p_batch_chsq, option = "observed", print_option = "pandoc"))
@@ -763,16 +763,16 @@ enve_final %>%
     dplyr::select(extortions, years, yearsquant) %>%
     mutate("All years" = "All years")-> gg_ext_years1
 
-melt(gg_ext_years1, 
-     id.vars = c("extortions", "years"), 
+melt(gg_ext_years1,
+     id.vars = c("extortions", "years"),
      value.name = "yearsquant") -> gg_ext_years1
 
 enve_final %>%
     dplyr::select(extortions, years, years_deciles) %>%
     mutate("All years" = "All years")-> gg_ext_years2
 
-melt(gg_ext_years2, 
-     id.vars = c("extortions", "years"), 
+melt(gg_ext_years2,
+     id.vars = c("extortions", "years"),
      value.name = "years_deciles") -> gg_ext_years2
 
 cbind(gg_ext_years1, years_deciles = gg_ext_years2$years_deciles) -> gg_ext_years
@@ -781,12 +781,12 @@ gg_ext_years$yearsquant <- factor(gg_ext_years$yearsquant)
 
 gg_ext_years$yearsquant <- relevel(gg_ext_years$yearsquant, ref = "All years")
 
-gg_ext_years$yearsquant <- factor(gg_ext_years$yearsquant, 
+gg_ext_years$yearsquant <- factor(gg_ext_years$yearsquant,
                                   levels = c("All years", levels(enve_final$yearsquant)))
 
 gg_ext_years$years_deciles <- relevel(gg_ext_years$years_deciles, ref = "All years")
 
-gg_ext_years$years_deciles <- factor(gg_ext_years$years_deciles, 
+gg_ext_years$years_deciles <- factor(gg_ext_years$years_deciles,
                                   levels = c("All years", levels(enve_final$years_deciles)))
 
 gg_ext_years <- dplyr::select(gg_ext_years, -variable)
@@ -800,18 +800,18 @@ years_scatterplots + geom_point() + theme_bw() + geom_smooth(method = "lm")
 
 # Quintiles
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_wrap(~ yearsquant, scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_wrap(~ yearsquant, scales = "free_x") +
     geom_smooth(method = "lm")
 
 # For deciles
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_wrap(~ years_deciles, scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_wrap(~ years_deciles, scales = "free_x") +
     geom_smooth(method = "lm")
 
 # Excluding the all business line
@@ -819,25 +819,25 @@ years_scatterplots +
 years_scatterplots <- ggplot(subset(gg_ext_years, yearsquant != "All years"),
                              aes(x = years, y = extortions))
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
     geom_smooth(method = "lm", aes(colour = yearsquant))
 
 ## Only for victims
 
-years_scatterplots <- ggplot(subset(gg_ext_years, yearsquant != "All years" & 
+years_scatterplots <- ggplot(subset(gg_ext_years, yearsquant != "All years" &
                                         extortions > 0),
                              aes(x = years, y = extortions))
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE) 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE)
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
     geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE) +
     scale_x_sqrt()
 
@@ -850,18 +850,18 @@ years_scatterplots <- ggplot(subset(gg_ext_years, extortions > 0),
 
 # Quintiles
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_wrap(~ yearsquant, scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_wrap(~ yearsquant, scales = "free_x") +
     geom_smooth(method = "lm")
 
 # For deciles
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_wrap(~ years_deciles, scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_wrap(~ years_deciles, scales = "free_x") +
     geom_smooth(method = "lm")
 
 ## wrap grid victims not a victim
@@ -880,32 +880,32 @@ select(gg_ext_years, - victim) -> gg_ext_years
 years_scatterplots <- ggplot(gg_ext_years,
                              aes(x = years, y = extortions))
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_grid(pop ~ yearsquant, scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_grid(pop ~ yearsquant, scales = "free_x") +
     geom_smooth(method = "lm")
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_grid(pop ~ years_deciles, scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_grid(pop ~ years_deciles, scales = "free_x") +
     geom_smooth(method = "lm")
 
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_grid(pop ~ . , scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_grid(pop ~ . , scales = "free_x") +
     geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE)
 
 years_scatterplots <- ggplot(subset(gg_ext_years, yearsquant != "All years"),
                              aes(x = years, y = extortions))
 
-years_scatterplots + 
-    geom_point() + 
-    theme_bw() + 
-    facet_grid(pop ~ . , scales = "free_x") + 
+years_scatterplots +
+    geom_point() +
+    theme_bw() +
+    facet_grid(pop ~ . , scales = "free_x") +
     geom_smooth(method = "lm", aes(colour = yearsquant), se = FALSE)
 
 
@@ -975,8 +975,8 @@ rownames(state_mc_gini_df) <- names(state_mc_gini_l)
 
 state_mc_gini_df$NOM_ENT <- as.factor(names(state_mc_gini_l))
 
-state_mc_gini_hyp <- sapply(state_gini_tests[1:32], 
-                            function(x) if(x$mc_test == TRUE) "***" 
+state_mc_gini_hyp <- sapply(state_gini_tests[1:32],
+                            function(x) if(x$mc_test == TRUE) "***"
                                         else "")
 
 unlist(state_mc_gini_hyp) -> state_mc_gini_df$test
@@ -991,8 +991,8 @@ state_mc_gini_vic_l <- lapply(state_gini_vic_tests[1:32], function(x) x$mc_mean)
 
 state_mc_gini_df$P.Gini.vic <- data.frame(unlist(state_mc_gini_vic_l))[,1]
 
-state_mc_gini_vic_hyp <- sapply(state_gini_vic_tests[1:32], 
-                            function(x) if(x$mc_test == TRUE) "***" 
+state_mc_gini_vic_hyp <- sapply(state_gini_vic_tests[1:32],
+                            function(x) if(x$mc_test == TRUE) "***"
                                         else "")
 
 unlist(state_mc_gini_vic_hyp) -> state_mc_gini_df$vic.test
@@ -1008,10 +1008,10 @@ kable(state_summary, format = "pandoc", digits = 3)
 
 state_table <- by(enve_final$extortions, enve_final$NOM_ENT, victim_table)
 
-lapply(seq_along(state_table), function(x) 
+lapply(seq_along(state_table), function(x)
     {
     cap <- names(state_table)[x]
-    final <- kable(state_table[[x]], format = "pandoc", digits = 3, 
+    final <- kable(state_table[[x]], format = "pandoc", digits = 3,
                    caption = cap)
     return(final)
     }) -> state_dist_list
@@ -1103,11 +1103,11 @@ I will not test every single model as before, as we have done this before. Thus 
 
 ```{r main-formula}
 
-count_formula <- as.formula("extortions ~ 
-                            bribes + 
-                            yearsquant + 
-                            subsector + 
-                            size + 
+count_formula <- as.formula("extortions ~
+                            bribes +
+                            yearsquant +
+                            subsector +
+                            size +
                             (1 | state)")
 
 ```
@@ -1249,10 +1249,10 @@ lm4 <- update(lm2, . ~ . - log_deaths)
 vif(lm4)
 
 ####
-screenreg(list(negbin = mnb1, 
+screenreg(list(negbin = mnb1,
                "deaths + pop" = mnb3,
                "deaths" = mnb4,
-               "pop" = mnb5), 
+               "pop" = mnb5),
           single.row = TRUE)
 
 ```
@@ -1310,19 +1310,19 @@ vif(mnb10)
 
 lrtest(mnb10, mnb1, mnb7, mnb6)
 
-screenreg(list("no bribes" = mnb10, 
-               "bus bribes" = mnb1, 
+screenreg(list("no bribes" = mnb10,
+               "bus bribes" = mnb1,
                "b + s bribes" = mnb7,
-               "bs_bribes + nbus" = mnb6), 
+               "bs_bribes + nbus" = mnb6),
           single.row = TRUE)
 
 lrtest(mnb10, mnb9, mnb8, mnb6)
 
 
-screenreg(list("no bribes" = mnb10, 
-               "state bribes" = mnb9, 
+screenreg(list("no bribes" = mnb10,
+               "state bribes" = mnb9,
                "s bribes + nbus" = mnb8,
-               "bs_bribes + nbus" = mnb6), 
+               "bs_bribes + nbus" = mnb6),
           single.row = TRUE)
 
 ## Include with log_deaths and pop
@@ -1350,7 +1350,7 @@ vif(lm8)
 lrtest(mnb3, mnb12, mnb11)
 
 screenreg(list("deaths + pop" = mnb3,
-               "+ s bribes" = mnb12, 
+               "+ s bribes" = mnb12,
                "+ nbus" = mnb11),
           single.row = TRUE)
 
@@ -1418,8 +1418,8 @@ lrtest(mnb5 ,mnb16, mnb15)
 
 lrtest(mnb13, mnb16)
 
-screenreg(list("No state" = mnb1, 
-               "deaths" = mnb4, 
+screenreg(list("No state" = mnb1,
+               "deaths" = mnb4,
                "deaths +  pop" = mnb3,
                "wpns" = mnb13,
                "wpns + dth" = mnb14,
@@ -1520,7 +1520,7 @@ mnb23 <- update(mnb22, . ~ . - log_drug_crim)
 
 lrtest(mnb23, mnb22, mnb21)
 
-# include deaths 
+# include deaths
 
 mnb24 <- update(mnb20, . ~ . + log_deaths)
 summary(mnb24)
@@ -1533,7 +1533,7 @@ lm17 <- update(lm15, . ~ . + log_deaths)
 vif(lm17)
 vif(lm17)^2
 
-# no fed crimes 
+# no fed crimes
 
 mnb25 <- update(mnb18, . ~ . - log_wpn_crim)
 summary(mnb25)
@@ -1749,7 +1749,7 @@ lrtest(mnb_final, mnb_f_deaths)
 vif(mnb_f_deaths)
 vif(mnb_f_deaths)^2
 
-lm_f_deaths <- lm(update(formula(nb_final), . ~ . +  log_deaths), 
+lm_f_deaths <- lm(update(formula(nb_final), . ~ . +  log_deaths),
                   data = enve_model)
 vif(lm_f_deaths)
 vif(lm_f_deaths)^2
@@ -1848,7 +1848,7 @@ lrtest(mzinb_only_state, mzinb_full)
 
 screenreg(list("MZINB Full" = mzinb_full,
                "No state" = mzinb_no_state,
-               "No bus" = mzinb_only_state), 
+               "No bus" = mzinb_only_state),
           single.row = TRUE)
 
 # include deaths
@@ -1935,17 +1935,17 @@ Single level ZINB using pscl
 
 ```{r zinb-pscl}
 
-zi_formula <- as.formula(extortions ~ 
-                             bribes + 
-                             yearsquant + 
+zi_formula <- as.formula(extortions ~
+                             bribes +
+                             yearsquant +
                              subsector +
-                             size + 
-                             log_pop + 
-                             log_wpn_crim + 
-                             log_bribe_vic + 
-                             log_nbus + 
-                             log_drug_crim + 
-                             comp_index + 
+                             size +
+                             log_pop +
+                             log_wpn_crim +
+                             log_bribe_vic +
+                             log_nbus +
+                             log_drug_crim +
+                             comp_index +
                              law_index | 1)
 
 zinb_pscl_simple_full <- zeroinfl(zi_formula, data = enve_model,
@@ -1961,28 +1961,28 @@ summary(nb_mass_final)
 lrtest(nb_mass_final, zinb_pscl_simple_full)
 vuong(nb_mass_final, zinb_pscl_simple_full)
 
-zi_formula <- as.formula(extortions ~ 
-                             bribes + 
-                             yearsquant + 
+zi_formula <- as.formula(extortions ~
+                             bribes +
+                             yearsquant +
                              subsector +
-                             size + 
-                             log_pop + 
-                             log_wpn_crim + 
-                             log_bribe_vic + 
-                             log_nbus + 
-                             log_drug_crim + 
-                             comp_index + 
+                             size +
+                             log_pop +
+                             log_wpn_crim +
+                             log_bribe_vic +
+                             log_nbus +
+                             log_drug_crim +
+                             comp_index +
                              law_index |
-                             bribes + 
-                             yearsquant + 
+                             bribes +
+                             yearsquant +
                              subsector +
-                             size + 
-                             log_pop + 
-                             log_wpn_crim + 
-                             log_bribe_vic + 
-                             log_nbus + 
-                             log_drug_crim + 
-                             comp_index + 
+                             size +
+                             log_pop +
+                             log_wpn_crim +
+                             log_bribe_vic +
+                             log_nbus +
+                             log_drug_crim +
+                             comp_index +
                              law_index)
 
 zinb_pscl_full <- zeroinfl(zi_formula, data = enve_model,
@@ -2005,8 +2005,8 @@ summary(zinb_pscl_nullc)
 lrtest(zinb_pscl_nullc, zinb_pscl_full)
 vuong(zinb_pscl_nullc, zinb_pscl_full)
 
-zinb_pscl_c_all_z_state <- update(zinb_pscl_full, . ~ . | . - bribes - 
-                             yearsquant - 
+zinb_pscl_c_all_z_state <- update(zinb_pscl_full, . ~ . | . - bribes -
+                             yearsquant -
                              subsector -
                              size )
 
@@ -2015,8 +2015,8 @@ summary(zinb_pscl_c_all_z_state)
 lrtest(zinb_pscl_simple_full, zinb_pscl_c_all_z_state)
 vuong(zinb_pscl_simple_full, zinb_pscl_c_all_z_state)
 
-zinb_pscl_c_state_l_z_all <- update(zinb_pscl_full, . ~ . - bribes - 
-                             yearsquant - 
+zinb_pscl_c_state_l_z_all <- update(zinb_pscl_full, . ~ . - bribes -
+                             yearsquant -
                              subsector -
                              size | . )
 
@@ -2026,7 +2026,7 @@ lrtest(zinb_pscl_simple_full, zinb_pscl_c_state_l_z_all)
 vuong(zinb_pscl_simple_full, zinb_pscl_c_state_l_z_all)
 
 
-screenreg(list("ZINB Full" = zinb_pscl_full, 
+screenreg(list("ZINB Full" = zinb_pscl_full,
                "Count: Null" = zinb_pscl_nullc,
                "Zero: Null" = zinb_pscl_simple_full,
                "Zero: state" = zinb_pscl_c_all_z_state,
@@ -2049,7 +2049,7 @@ enve_trunc <- subset(enve_model, extortions > 0)
 ```
 
 Multilevel Hurdle model using glmmadmb
-- fully specified: MHNB vs MNB 
+- fully specified: MHNB vs MNB
 - Full: MHNB vs HNB
 
 Compare:
@@ -2067,7 +2067,7 @@ binary_formula <- update(formula(mnb_final), extortion_victim ~ .)
 
 ## Binary part first
 
-mlogit_full <- glmmadmb(binary_formula, data = enve_model, 
+mlogit_full <- glmmadmb(binary_formula, data = enve_model,
                         family = "binomial")
 
 summary(mlogit_full)
@@ -2089,8 +2089,8 @@ compare_hurdle2other(mlogit_full, mtnb_full, mnb_final, mzinb_full)
 
 screenreg(list("MNB" = mnb_final,
                "MZINB" = mzinb_full,
-               "Logit" = mlogit_full, 
-               "Trunc. NB" = mtnb_full), 
+               "Logit" = mlogit_full,
+               "Trunc. NB" = mtnb_full),
           single.row = TRUE)
 
 # Full, single level, equal equation hurdle
@@ -2117,13 +2117,13 @@ compare_hurdle2other(logit_full, tnb_full, nb_final, zinb_full)
 
 screenreg(list("NB" = nb_final,
                "ZINB" = zinb_full,
-               "Logit" = logit_full, 
-               "Trunc. NB" = tnb_full), 
+               "Logit" = logit_full,
+               "Trunc. NB" = tnb_full),
           single.row = TRUE)
 
 ## Compare two hurdle modles: multilevel vs single level
 
-hurdle_compare(joint_ic(logit_full, tnb_full), 
+hurdle_compare(joint_ic(logit_full, tnb_full),
                joint_ic(mlogit_full, mtnb_full),
                modnames = c("Single level", "Multilevel"))
 
@@ -2186,7 +2186,7 @@ lrtest(mtnb_full, mtnb_deaths)
 
 # together with deaths
 
-hurdle_compare(joint_ic(mlogit_full, mtnb_full), 
+hurdle_compare(joint_ic(mlogit_full, mtnb_full),
                joint_ic(mlogit_deaths, mtnb_deaths),
                modnames = c("Full", "+ deaths"))
 
