@@ -1,11 +1,13 @@
 # Package checker script
 
-packages <- c(#"victim",
+packages <- c("devtools",
+              "victim",
               "foreign",
               "ggplot2",
               "Cairo",
               "knitr",
               "texreg",
+              "R2admb",
               "glmmADMB",
               "classInt",
               "dplyr",
@@ -16,7 +18,7 @@ packages <- c(#"victim",
 
 test <- packages %in% rownames(installed.packages())
 
-if(all(test)) 
+if(all(test))
 {
     cat("All required packages are installed.")
 } else
@@ -25,6 +27,3 @@ if(all(test))
     cat(paste0("Packages not installed: ", not,
                  ".\nPlease install them manually."))
 }
-
-
-
