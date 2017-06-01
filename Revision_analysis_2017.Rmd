@@ -1074,10 +1074,10 @@ enve_final %>%
 
 ##### Comment out before sending #####
 
-enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
+## enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
 
 
-enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
+## enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
 
 ##### Comment out before sending #####
 
@@ -2193,11 +2193,6 @@ hurdle_compare(joint_ic(mlogit_full, mtnb_full),
 compare_hurdle2other(mlogit_deaths, mtnb_deaths, mnb_f_deaths)
 
 ```
-
-# Before sending for real
-
-- Remove package loading from here
-- Remove subsector fake data added for testing only
 
 
 ```{r endtime}
