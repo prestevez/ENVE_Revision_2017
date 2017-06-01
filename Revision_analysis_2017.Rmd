@@ -54,7 +54,7 @@ library(ggplot2)
 library(Cairo)
 library(knitr)
 library(texreg)
-#library(lme4)
+library(lme4)
 library(glmmADMB)
 library(classInt)
 library(dplyr)
@@ -63,9 +63,6 @@ library(lmtest)
 library(car)
 library(pscl)
 
-# make sure we use the dplyr select
-
-select <- dplyr::select
 ```
 
 
@@ -763,7 +760,7 @@ A brief EDA analysis of the years variable, using a facet plot of the bivariate 
 ```{r years-plots}
 
 enve_final %>%
-    select(extortions, years, yearsquant) %>%
+    dplyr::select(extortions, years, yearsquant) %>%
     mutate("All years" = "All years")-> gg_ext_years1
 
 melt(gg_ext_years1, 
@@ -771,7 +768,7 @@ melt(gg_ext_years1,
      value.name = "yearsquant") -> gg_ext_years1
 
 enve_final %>%
-    select(extortions, years, years_deciles) %>%
+    dplyr::select(extortions, years, years_deciles) %>%
     mutate("All years" = "All years")-> gg_ext_years2
 
 melt(gg_ext_years2, 
@@ -792,7 +789,7 @@ gg_ext_years$years_deciles <- relevel(gg_ext_years$years_deciles, ref = "All yea
 gg_ext_years$years_deciles <- factor(gg_ext_years$years_deciles, 
                                   levels = c("All years", levels(enve_final$years_deciles)))
 
-gg_ext_years <- select(gg_ext_years, -variable)
+gg_ext_years <- dplyr::select(gg_ext_years, -variable)
 
 years_scatterplots <- ggplot(gg_ext_years, aes(x = years, y = extortions))
 
@@ -1057,7 +1054,7 @@ To avoid any problems with NA values that may lead to non-convergence, work with
 ```{r model-data-frame}
 
 enve_final %>%
-    select(extortions,
+    dplyr::select(extortions,
            bribes,
            yearsquant,
            years_deciles,
@@ -1126,6 +1123,13 @@ get_glmmadmb(mnb1)
 # vs Poisson
 
 mp1 <- glmmadmb(count_formula, data = enve_model, family = "poisson", zeroInflation=FALSE)
+
+tcmp1 <- tryCatch(summary(mp1), error = function(e) e)
+
+if(is(tcmp1, "error"))
+{
+    mp1 <- glmer(count_formula, data = enve_model, family = "poisson")
+} else {print("mp1 was fitted correctly with glmmadmb")}
 
 summary(mp1)
 
@@ -1760,6 +1764,15 @@ screenreg(list("MNB" = mnb_final,
 
 mp_final <- glmmadmb(formula(mnb_final), family = "poisson", zeroInflation = FALSE,
                      data = enve_model)
+
+tcmp1 <- tryCatch(summary(mp_final), error = function(e) e)
+
+if(is(tcmp1, "error"))
+{
+    mp_final <- glmer(formula(mnb_final), data = enve_model, family = "poisson")
+} else {print("mp_final was fitted correctly with glmmadmb")}
+
+
 summary(mp_final)
 get_glmmadmb(mp_final)
 
@@ -2110,7 +2123,7 @@ screenreg(list("NB" = nb_final,
 
 ## Compare two hurdle modles: multilevel vs single level
 
-hurdle_compare(joint_ic(logit_full, tnib_full), 
+hurdle_compare(joint_ic(logit_full, tnb_full), 
                joint_ic(mlogit_full, mtnb_full),
                modnames = c("Single level", "Multilevel"))
 
