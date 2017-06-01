@@ -62,6 +62,10 @@ library(reshape2)
 library(lmtest)
 library(car)
 library(pscl)
+
+# make sure we use the dplyr select
+
+select <- dplyr::select
 ```
 
 
