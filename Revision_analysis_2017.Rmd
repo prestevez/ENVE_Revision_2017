@@ -1075,10 +1075,10 @@ enve_final %>%
 
 ##### Comment out before sending #####
 
-## enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
+enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
 
 
-## enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
+enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
 
 ##### Comment out before sending #####
 
@@ -1107,47 +1107,63 @@ I will not test every single model as before, as we have done this before. Thus 
 
 model_failsafe <- function(formula, data, family, multilevel = TRUE, ...)
 {
-    model <- glmmADMB::glmmadmb(formula = formula,
+    model <- tryCatch(glmmADMB::glmmadmb(formula = formula,
                                 data = data,
                                 family = family,
                                 zeroInflation = FALSE, 
                                 ...,
-                                admb.opts = admbControl(noinit = FALSE, shess=FALSE),
-                                extra.args = "-ndi 60000")
+                                admb.opts = glmmADMB::admbControl(noinit = FALSE, shess=FALSE),
+                                extra.args = "-ndi 60000"), 
+                      error = function(e)
+                          {
+                          print("glmmADMB failed")
+                          print(e)
+                          e
+                          })
     
-    tc <- tryCatch(summary(model), error = function(e) e)
+    #tc <- tryCatch(summary(model), error = function(e) e)
     
-    if(is(tc, "error"))
+    if(is(model, "error"))
     {
+        print("glmmADMB failed, trying fit with other packages")
         if(isTRUE(multilevel))
         {
             if(family != "nbinom")
             {
-                model <- lme4::glmer(formula = formula,
+                model <- tryCatch(lme4::glmer(formula = formula,
                                      data = data,
-                                     family = family)
+                                     family = family),
+                                  error = function(e) e)
             }
             if(family == "nbinom")
             {
-                model <- lme4::glmer.nb(formula = formula,
-                                     data = data)
+                model <- tryCatch(lme4::glmer.nb(formula = formula,
+                                     data = data),
+                                  error = function(e) e)
             }
         }
         else
         {
           if(family != "nbinom")
             {
-                model <- glm(formula = formula,
+                model <- tryCatch(glm(formula = formula,
                                      data = data,
-                                     family = family)
+                                     family = family),
+                                  error = function(e) e)
             }
             if(family == "nbinom")
             {
-                model <- MASS::glm.nb(formula = formula,
-                                     data = data)
+                model <- tryCatch(MASS::glm.nb(formula = formula,
+                                     data = data),
+                                  error = function(e) e)
             }  
         }
         
+        if(is(model, "error"))
+        {
+            print(model)
+            print("Second attempt also failed")
+        }
     }
     else {print("The model was fitted correctly with glmmadmb")}
     
@@ -1497,11 +1513,11 @@ summary(mnb14)
 get_glmmadmb(mnb14)
 
 vif(mnb14)
-vif(mnb14)^2
+
 
 lm9 <- update(lm3, . ~ . + log_wpn_crim)
 vif(lm9)
-vif(lm9)^2
+
 
 
 mnb15_formula <- update(mnb3_formula, . ~ . + log_wpn_crim)
@@ -1515,11 +1531,11 @@ summary(mnb15)
 get_glmmadmb(mnb15)
 
 vif(mnb15)
-vif(mnb15)^2
+
 
 lm10 <- update(lm2, . ~ . + log_wpn_crim)
 vif(lm10)
-vif(lm10)^2
+
 
 lrtest(mnb4, mnb14, mnb15)
 
@@ -1538,11 +1554,10 @@ summary(mnb16)
 get_glmmadmb(mnb16)
 
 vif(mnb16)
-vif(mnb16)^2
 
 lm11 <- update(lm10, . ~ . - log_deaths)
 vif(lm11)
-vif(lm11)^2
+
 
 lrtest(mnb5 ,mnb16, mnb15)
 
@@ -1584,17 +1599,17 @@ vif(mnb18)
 lm12 <- update(lm10, . ~ . + log_bribe_vic)
 
 vif(lm12)
-vif(lm12)^2
+
 
 lm13 <- update(lm12, . ~ . + log_nbus)
 
 vif(lm13)
-vif(lm13)^2
+
 
 lm14 <- update(lm13, . ~ . - log_deaths)
 
 vif(lm14)
-vif(lm14)^2
+
 
 lrtest(mnb16, mnb17, mnb18)
 
@@ -1635,7 +1650,7 @@ vif(mnb20)
 
 lm15 <- update(lm14, . ~ . + log_drug_crim)
 vif(lm15)
-vif(lm15)^2
+
 
 lrtest(mnb18, mnb20)
 
@@ -1651,11 +1666,11 @@ summary(mnb21)
 get_glmmadmb(mnb21)
 
 vif(mnb21)
-vif(mnb21)^2
+
 
 lm16 <- update(lm15, . ~ . - log_wpn_crim)
 vif(lm16)
-vif(lm16)^2
+
 
 lrtest(mnb21, mnb20)
 
@@ -1690,11 +1705,11 @@ summary(mnb24)
 get_glmmadmb(mnb24)
 
 vif(mnb24)
-vif(mnb24)^2
+
 
 lm17 <- update(lm15, . ~ . + log_deaths)
 vif(lm17)
-vif(lm17)^2
+
 
 # no fed crimes
 
@@ -1754,11 +1769,11 @@ get_glmmadmb(mnb27)
 lrtest(mnb20, mnb27)
 
 vif(mnb27)
-vif(mnb27)^2
+
 
 lm18 <- update(lm15, . ~ . + comp_index)
 vif(lm18)
-vif(lm18)^2
+
 
 # control: rule of law index
 
@@ -1776,11 +1791,11 @@ lrtest(mnb27, mnb28)
 lrtest(mnb20, mnb28)
 
 vif(mnb28)
-vif(mnb28)^2
+
 
 lm19 <- update(lm18, . ~ . + law_index)
 vif(lm19)
-vif(lm19)^2
+
 
 ## dropping comp_index and keeping law index
 
@@ -1796,11 +1811,11 @@ get_glmmadmb(mnb29)
 lrtest(mnb20, mnb29)
 
 vif(mnb29)
-vif(mnb29)^2
+
 
 lm20 <- update(lm19, . ~ . - comp_index)
 vif(lm20)
-vif(lm20)^2
+
 
 ## Including deaths
 
@@ -1816,11 +1831,11 @@ get_glmmadmb(mnb30)
 lrtest(mnb28, mnb30)
 
 vif(mnb30)
-vif(mnb30)^2
+
 
 lm21 <- update(lm19, . ~ . + log_deaths)
 vif(lm21)
-vif(lm21)^2
+
 
 screenreg(list("no index" = mnb20,
                "comp" = mnb27,
@@ -1850,7 +1865,7 @@ summary(mnb_final)
 get_glmmadmb(mnb_final)
 
 vif(mnb_final)
-vif(mnb_final)^2
+
 
 # Test all state level vars
 lrtest(mnb1, mnb_final)
@@ -1927,7 +1942,7 @@ summary(mnb_noc)
 get_glmmadmb(mnb_noc)
 
 vif(mnb_noc)
-vif(mnb_noc)^2
+
 
 lm_noc <- update(lm1, update(mnb_noc_formula, . ~ . - (1 | state)))
 
