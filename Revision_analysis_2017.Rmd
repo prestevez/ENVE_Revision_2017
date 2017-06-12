@@ -62,6 +62,7 @@ library(reshape2)
 library(lmtest)
 library(car)
 library(pscl)
+sessionInfo()
 
 ```
 
@@ -1101,6 +1102,61 @@ length(enve_model[is.na(enve_model)])
 
 I will not test every single model as before, as we have done this before. Thus I will start with the "best model" from previous exercises, changing the state homicide rate for the log deaths and log pop variables instead. To minimise any syntax mistakes, I will work with formula objects and update them as I proceed.
 
+
+```{r model-failsafe-functions}
+
+model_failsafe <- function(formula, data, family, multilevel = TRUE, ...)
+{
+    model <- glmmADMB::glmmadmb(formula = formula,
+                                data = data,
+                                family = family,
+                                zeroInflation = FALSE, 
+                                ...,
+                                admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                                extra.args = "-ndi 60000")
+    
+    tc <- tryCatch(summary(model), error = function(e) e)
+    
+    if(is(tc, "error"))
+    {
+        if(isTRUE(multilevel))
+        {
+            if(family != "nbinom")
+            {
+                model <- lme4::glmer(formula = formula,
+                                     data = data,
+                                     family = family)
+            }
+            if(family == "nbinom")
+            {
+                model <- lme4::glmer.nb(formula = formula,
+                                     data = data)
+            }
+        }
+        else
+        {
+          if(family != "nbinom")
+            {
+                model <- glm(formula = formula,
+                                     data = data,
+                                     family = family)
+            }
+            if(family == "nbinom")
+            {
+                model <- MASS::glm.nb(formula = formula,
+                                     data = data)
+            }  
+        }
+        
+    }
+    else {print("The model was fitted correctly with glmmadmb")}
+    
+    return(model)
+}
+
+```
+
+
 ```{r main-formula}
 
 count_formula <- as.formula("extortions ~
@@ -1112,9 +1168,14 @@ count_formula <- as.formula("extortions ~
 
 ```
 
+
 ```{r multilevel-negative-binomial}
 
-mnb1 <- glmmadmb(count_formula, data = enve_model, family = "nbinom", zeroInflation=FALSE)
+admbControl <- glmmADMB::admbControl
+
+mnb1 <- model_failsafe(formula = count_formula, 
+                       data = enve_model, 
+                       family = "nbinom")
 
 summary(mnb1)
 
@@ -1122,14 +1183,10 @@ get_glmmadmb(mnb1)
 
 # vs Poisson
 
-mp1 <- glmmadmb(count_formula, data = enve_model, family = "poisson", zeroInflation=FALSE)
+mp1 <- model_failsafe(count_formula, 
+                      data = enve_model, 
+                      family = "poisson")
 
-tcmp1 <- tryCatch(summary(mp1), error = function(e) e)
-
-if(is(tcmp1, "error"))
-{
-    mp1 <- glmer(count_formula, data = enve_model, family = "poisson")
-} else {print("mp1 was fitted correctly with glmmadmb")}
 
 summary(mp1)
 
@@ -1142,7 +1199,11 @@ lrtest(mp1, mnb1)
 
 # vs single level nb
 
-nb1 <- update(mnb1, . ~ . - (1 | state))
+nb1_formula <- update(count_formula, . ~ . - (1 | state))
+
+nb1 <- model_failsafe(nb1_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = FALSE)
 
 summary(nb1)
 
@@ -1167,7 +1228,11 @@ mnb1_drop
 
 # NB null, multi and one level
 
-nb_null <- update(mnb1, . ~ 1)
+nb_null_formula <- update(count_formula, . ~ 1)
+
+nb_null <- model_failsafe(nb_null_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = FALSE)
 
 summary(nb_null)
 get_glmmadmb(nb_null)
@@ -1176,7 +1241,11 @@ lrtest(nb_null, nb1)
 
 lrtest(nb_null, mnb1)
 
-mnb_null <- update(mnb1, . ~ 1 + (1 | state))
+mnb_null_formula <- update(count_formula, . ~ (1 | state))
+
+mnb_null <- model_failsafe(mnb_null_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb_null)
 get_glmmadmb(mnb_null)
@@ -1190,7 +1259,11 @@ lrtest(mnb_null, mnb1)
 
 ```{r negative-binomial-years_deciles}
 
-mnb2 <- update(mnb1, . ~ . - yearsquant + years_deciles)
+mnb2_formula <- update(count_formula, . ~ . - yearsquant + years_deciles)
+
+mnb2 <- model_failsafe(mnb2_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb2)
 
@@ -1205,7 +1278,11 @@ Now start introducing the state-level variables. First, log deaths, then the sat
 
 ```{r mnb-log_deaths}
 
-mnb3 <- update(mnb1, . ~ . + log_deaths + log_pop)
+mnb3_formula <- update(count_formula, . ~ . + log_deaths + log_pop)
+
+mnb3 <-  model_failsafe(mnb3_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb3)
 get_glmmadmb(mnb3)
@@ -1220,7 +1297,11 @@ vif(lm2)
 
 # drop pop
 
-mnb4 <- update(mnb3, . ~ . - log_pop)
+mnb4_formula <- update(count_formula, . ~ . + log_deaths)
+
+mnb4 <- model_failsafe(mnb4_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb4)
 get_glmmadmb(mnb4)
@@ -1235,7 +1316,11 @@ vif(lm3)
 
 # drop deaths
 
-mnb5 <- update(mnb3, . ~ . - log_deaths)
+mnb5_formula <- update(count_formula, . ~ . + log_pop)
+
+mnb5 <- model_failsafe(mnb5_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb5)
 get_glmmadmb(mnb5)
@@ -1259,7 +1344,11 @@ screenreg(list(negbin = mnb1,
 
 ```{r mnb-state-bribes}
 
-mnb6 <- update(mnb1, . ~ . + log_bribe_vic + log_nbus)
+mnb6_formula <- update(count_formula, . ~ . + log_bribe_vic + log_nbus)
+
+mnb6 <- model_failsafe(mnb6_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb6)
 get_glmmadmb(mnb6)
@@ -1271,7 +1360,11 @@ vif(lm5)
 
 # drop nbus
 
-mnb7 <- update(mnb1, . ~ . + log_bribe_vic)
+mnb7_formula <- update(count_formula, . ~ . + log_bribe_vic)
+
+mnb7 <- model_failsafe(mnb7_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb7)
 get_glmmadmb(mnb7)
@@ -1285,7 +1378,11 @@ lrtest(mnb1, mnb7, mnb6)
 
 # test vs business-level bribes
 
-mnb8 <- update(mnb6, . ~ . - bribes)
+mnb8_formula <- update(count_formula, . ~ . + log_bribe_vic + log_nbus - bribes)
+
+mnb8 <- model_failsafe(mnb8_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb8)
 get_glmmadmb(mnb8)
@@ -1294,14 +1391,22 @@ vif(mnb8)
 
 lrtest(mnb8, mnb6)
 
-mnb9 <- update(mnb7, . ~ . - bribes)
+mnb9_formula <- update(mnb7_formula, . ~ . - bribes)
+
+mnb9 <- model_failsafe(mnb9_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb9)
 get_glmmadmb(mnb9)
 
 vif(mnb9)
 
-mnb10 <- update(mnb1, . ~ . - bribes)
+mnb10_formula <- update(count_formula, . ~ . - bribes)
+
+mnb10 <- model_failsafe(mnb10_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb10)
 get_glmmadmb(mnb10)
@@ -1327,7 +1432,11 @@ screenreg(list("no bribes" = mnb10,
 
 ## Include with log_deaths and pop
 
-mnb11 <- update(mnb3, . ~ . + log_bribe_vic + log_nbus)
+mnb11_formula <- update(mnb3_formula, . ~ . + log_bribe_vic + log_nbus)
+
+mnb11 <- model_failsafe(mnb11_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb11)
 get_glmmadmb(mnb11)
@@ -1337,7 +1446,11 @@ vif(mnb11)
 lm7 <- update(lm2, . ~ . + log_bribe_vic + log_nbus)
 vif(lm7)
 
-mnb12 <- update(mnb11,  . ~ . - log_nbus)
+mnb12_formula <- update(mnb11_formula,  . ~ . - log_nbus)
+
+mnb12 <- model_failsafe(mnb12_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb12)
 get_glmmadmb(mnb12)
@@ -1361,7 +1474,11 @@ screenreg(list("deaths + pop" = mnb3,
 
 # firearms-related federal crimes
 
-mnb13 <- update(mnb1, . ~ . + log_wpn_crim)
+mnb13_formula <- update(count_formula, . ~ . + log_wpn_crim)
+
+mnb13 <- model_failsafe(mnb13_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb13)
 get_glmmadmb(mnb13)
@@ -1370,7 +1487,11 @@ vif(mnb13)
 
 lrtest(mnb1, mnb13)
 
-mnb14 <- update(mnb4, . ~ . + log_wpn_crim)
+mnb14_formula <- update(mnb4_formula, . ~ . + log_wpn_crim)
+
+mnb14 <- model_failsafe(mnb14_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb14)
 get_glmmadmb(mnb14)
@@ -1383,7 +1504,12 @@ vif(lm9)
 vif(lm9)^2
 
 
-mnb15 <- update(mnb3, . ~ . + log_wpn_crim)
+mnb15_formula <- update(mnb3_formula, . ~ . + log_wpn_crim)
+
+mnb15 <- model_failsafe(mnb15_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
+
 
 summary(mnb15)
 get_glmmadmb(mnb15)
@@ -1402,7 +1528,11 @@ lrtest(mnb3, mnb15)
 
 # droping deaths
 
-mnb16 <- update(mnb15, . ~ . - log_deaths)
+mnb16_formula <- update(mnb15_formula, . ~ . - log_deaths)
+
+mnb16 <- model_failsafe(mnb16_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb16)
 get_glmmadmb(mnb16)
@@ -1429,14 +1559,22 @@ screenreg(list("No state" = mnb1,
 
 ## include state bribes var
 
-mnb17 <- update(mnb16, . ~ . + log_bribe_vic)
+mnb17_formula <- update(mnb16_formula, . ~ . + log_bribe_vic)
+
+mnb17 <- model_failsafe(mnb17_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb17)
 get_glmmadmb(mnb17)
 
 vif(mnb17)
 
-mnb18 <- update(mnb17, . ~ . + log_nbus)
+mnb18_formula <- update(mnb17_formula, . ~ . + log_nbus)
+
+mnb18 <- model_failsafe(mnb18_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb18)
 get_glmmadmb(mnb18)
@@ -1460,7 +1598,11 @@ vif(lm14)^2
 
 lrtest(mnb16, mnb17, mnb18)
 
-mnb19 <- update(mnb17, . ~ . - log_pop)
+mnb19_formula <- update(mnb17_formula, . ~ . - log_pop)
+
+mnb19 <- model_failsafe(mnb19_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb19)
 get_glmmadmb(mnb19)
@@ -1481,7 +1623,11 @@ screenreg(list("no state" = mnb1,
 
 # drugs-related federal crimes
 
-mnb20 <- update(mnb18, . ~ . + log_drug_crim)
+mnb20_formula <- update(mnb18_formula, . ~ . + log_drug_crim)
+
+mnb20 <- model_failsafe(mnb20_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb20)
 get_glmmadmb(mnb20)
@@ -1495,7 +1641,11 @@ lrtest(mnb18, mnb20)
 
 # drop log_wpn_crim
 
-mnb21 <- update(mnb20, . ~ . - log_wpn_crim)
+mnb21_formula <- update(mnb20_formula, . ~ . - log_wpn_crim)
+
+mnb21 <- model_failsafe(mnb21_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb21)
 get_glmmadmb(mnb21)
@@ -1511,18 +1661,31 @@ lrtest(mnb21, mnb20)
 
 # drop log_drug_crim
 
-mnb22 <- update(mnb21, . ~ . -  log_pop)
+mnb22_formula <- update(mnb21_formula, . ~ . -  log_pop)
+
+mnb22 <- model_failsafe(mnb22_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb22)
 get_glmmadmb(mnb22)
 
-mnb23 <- update(mnb22, . ~ . - log_drug_crim)
+mnb23_formula <- update(mnb22_formula, . ~ . - log_drug_crim)
+
+mnb22 <- model_failsafe(mnb23_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 lrtest(mnb23, mnb22, mnb21)
 
 # include deaths
 
-mnb24 <- update(mnb20, . ~ . + log_deaths)
+mnb24_formula <- update(mnb20_formula, . ~ . + log_deaths)
+
+mnb24 <- model_failsafe(mnb24_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
+
 summary(mnb24)
 get_glmmadmb(mnb24)
 
@@ -1535,13 +1698,22 @@ vif(lm17)^2
 
 # no fed crimes
 
-mnb25 <- update(mnb18, . ~ . - log_wpn_crim)
+mnb25_formula <- update(mnb18_formula, . ~ . - log_wpn_crim)
+
+mnb25 <- model_failsafe(mnb25_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
+
 summary(mnb25)
 get_glmmadmb(mnb25)
 
 vif(mnb25)
 
-mnb26 <- update(mnb20, . ~ . -  log_pop)
+mnb26_formula <- update(mnb20_formula, . ~ . -  log_pop)
+
+mnb26 <- model_failsafe(mnb26_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb26)
 get_glmmadmb(mnb26)
@@ -1570,7 +1742,11 @@ Controls: Competitive index
 
 ## controls: competitive index
 
-mnb27 <- update(mnb20, . ~ . + comp_index)
+mnb27_formula <- update(mnb20_formula, . ~ . + comp_index)
+
+mnb27 <- model_failsafe(mnb27_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb27)
 get_glmmadmb(mnb27)
@@ -1586,7 +1762,11 @@ vif(lm18)^2
 
 # control: rule of law index
 
-mnb28 <- update(mnb27, . ~ . + law_index)
+mnb28_formula <- update(mnb27_formula, . ~ . + law_index)
+
+mnb28 <- model_failsafe(mnb28_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb28)
 get_glmmadmb(mnb28)
@@ -1604,7 +1784,11 @@ vif(lm19)^2
 
 ## dropping comp_index and keeping law index
 
-mnb29 <- update(mnb28, . ~ . - comp_index)
+mnb29_formula <- update(mnb28_formula, . ~ . - comp_index)
+
+mnb29 <- model_failsafe(mnb29_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb29)
 get_glmmadmb(mnb29)
@@ -1620,7 +1804,11 @@ vif(lm20)^2
 
 ## Including deaths
 
-mnb30 <- update(mnb28, . ~ . + log_deaths)
+mnb30_formula <- update(mnb28_formula, . ~ . + log_deaths)
+
+mnb30 <- model_failsafe(mnb30_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb30)
 get_glmmadmb(mnb30)
@@ -1656,6 +1844,8 @@ Final spec:
 
 mnb_final <- mnb28
 
+mnb_final_formula <- mnb28_formula
+
 summary(mnb_final)
 get_glmmadmb(mnb_final)
 
@@ -1667,8 +1857,6 @@ lrtest(mnb1, mnb_final)
 
 # Test vs multilevel null
 
-mnb_null <- update(mnb_final, . ~ 1 + (1 | state))
-
 summary(mnb_null)
 get_glmmadmb(mnb_null)
 
@@ -1676,14 +1864,16 @@ lrtest(mnb_null, mnb_final)
 
 # test vs sigle-level full and null
 
-nb_final <- update(mnb_final, . ~ . - (1 | state))
+nb_final_formula <- update(mnb_final_formula, . ~ . - (1 | state))
+
+nb_final <- model_failsafe(nb_final_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(nb_final)
 get_glmmadmb(nb_final)
 
 lrtest(nb_final, mnb_final)
-
-nb_null <- update(nb_final, . ~ 1)
 
 summary(nb_null)
 get_glmmadmb(nb_null)
@@ -1696,13 +1886,22 @@ lrtest(nb_null, nb_final)
 
 # Only state vars
 
-mnb_only_state <- update(mnb_null, . ~ . + log_pop + log_wpn_crim + log_drug_crim +
+mnb_only_state_formula <- update(mnb_null_formula, . ~ . + log_pop + log_wpn_crim + log_drug_crim +
                              log_bribe_vic + log_nbus + comp_index + law_index)
+
+mnb_only_state <- model_failsafe(mnb_only_state_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
+
 
 summary(mnb_only_state)
 get_glmmadmb(mnb_only_state)
 
-nb_only_state <- update(mnb_only_state, . ~ . - (1 | state))
+nb_only_state_formula <- update(mnb_only_state_formula, . ~ . - (1 | state))
+
+nb_only_state <- model_failsafe(nb_only_state_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = FALSE)
 
 summary(nb_only_state)
 get_glmmadmb(nb_only_state)
@@ -1711,14 +1910,18 @@ lrtest(nb_only_state, mnb_only_state)
 
 vif(nb_only_state)
 
-lm_only_state <- update(lm1, formula(nb_only_state))
+lm_only_state <- update(lm1, nb_only_state_formula)
 
 vif(lm_only_state)
 
 ## No controls
 
-mnb_noc <- update(mnb_final, . ~ . - log_pop - log_nbus - comp_index -
+mnb_noc_formula <- update(mnb_final_formula, . ~ . - log_pop - log_nbus - comp_index -
                       law_index)
+
+mnb_noc <- model_failsafe(mnb_noc_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
 
 summary(mnb_noc)
 get_glmmadmb(mnb_noc)
@@ -1726,10 +1929,9 @@ get_glmmadmb(mnb_noc)
 vif(mnb_noc)
 vif(mnb_noc)^2
 
-lm_noc <- update(lm1, update(formula(mnb_noc), . ~ . - (1 | state)))
+lm_noc <- update(lm1, update(mnb_noc_formula, . ~ . - (1 | state)))
 
 vif(lm_noc)
-vif(lm_noc)^2
 
 screenreg(list("MNB" = mnb_final,
                "No state vars" = mnb1,
@@ -1740,38 +1942,34 @@ screenreg(list("MNB" = mnb_final,
 
 ## Including deaths
 
-mnb_f_deaths <- update(mnb_final, . ~ . + log_deaths)
+mnb_f_deaths_formula <- update(mnb_final_formula, . ~ . + log_deaths)
+
+mnb_f_deaths <- model_failsafe(mnb_f_deaths_formula,
+                      data = enve_model,
+                      family = "nbinom", multilevel = TRUE)
+
+
 summary(mnb_f_deaths)
 get_glmmadmb(mnb_f_deaths)
 
 lrtest(mnb_final, mnb_f_deaths)
 
 vif(mnb_f_deaths)
-vif(mnb_f_deaths)^2
 
-lm_f_deaths <- lm(update(formula(nb_final), . ~ . +  log_deaths),
+lm_f_deaths <- lm(update(nb_final_formula, . ~ . +  log_deaths),
                   data = enve_model)
 vif(lm_f_deaths)
-vif(lm_f_deaths)^2
 
 screenreg(list("MNB" = mnb_final,
           "With deaths" = mnb_f_deaths),
           single.row = TRUE)
 
-
-
 ## Vs Poisson
 
-mp_final <- glmmadmb(formula(mnb_final), family = "poisson", zeroInflation = FALSE,
-                     data = enve_model)
 
-tcmp1 <- tryCatch(summary(mp_final), error = function(e) e)
-
-if(is(tcmp1, "error"))
-{
-    mp_final <- glmer(formula(mnb_final), data = enve_model, family = "poisson")
-} else {print("mp_final was fitted correctly with glmmadmb")}
-
+mp_final <- model_failsafe(mnb_final_formula,
+                      data = enve_model,
+                      family = "poisson", multilevel = TRUE)
 
 summary(mp_final)
 get_glmmadmb(mp_final)
@@ -1779,8 +1977,6 @@ get_glmmadmb(mp_final)
 lrtest(mp_final, mnb_final)
 
 screenreg(list("MNB" = mnb_final, "M Poisson" = mp_final), single.row = TRUE)
-
-
 
 
 ```
@@ -1796,23 +1992,32 @@ Multilevel zero inflated using glmmadmb
 
 ```{r mzinb-glmmadmb}
 
-mzinb_full <- glmmadmb(formula(mnb_final), data = enve_model,
-                       family = "nbinom", zeroInflation = TRUE)
+mzinb_full <- glmmadmb(mnb_final_formula, data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(mzinb_full)
 get_glmmadmb(mzinb_full)
 
 lrtest(mnb_final, mzinb_full)
 
-mzip_full <- glmmadmb(formula(mnb_final), data = enve_model,
-                       family = "poisson", zeroInflation = TRUE)
+mzip_full <- glmmadmb(mnb_final_formula, data = enve_model,
+                       family = "poisson", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(mzip_full)
 get_glmmadmb(mzip_full)
 
 lrtest(mzip_full, mzinb_full)
 
-zinb_full <- update(mzinb_full, . ~ . - (1 | state))
+zinb_full_formula <- update(mnb_final_formula, . ~ . - (1 | state))
+
+zinb_full <- glmmadmb(zinb_full_formula, data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(zinb_full)
 get_glmmadmb(zinb_full)
@@ -1828,8 +2033,10 @@ screenreg(list("MNB" = mnb_final,
 
 # Dropping state vars
 
-mzinb_no_state <- glmmadmb(formula(mnb1), data = enve_model,
-                       family = "nbinom", zeroInflation = TRUE)
+mzinb_no_state <- glmmadmb(count_formula, data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(mzinb_no_state)
 get_glmmadmb(mzinb_no_state)
@@ -1838,8 +2045,10 @@ lrtest(mzinb_no_state, mzinb_full)
 
 # Dropping bus vars
 
-mzinb_only_state <- glmmadmb(formula(mnb_only_state), data = enve_model,
-                       family = "nbinom", zeroInflation = TRUE)
+mzinb_only_state <- glmmadmb(mnb_only_state_formula, data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(mzinb_only_state)
 get_glmmadmb(mzinb_only_state)
@@ -1853,17 +2062,24 @@ screenreg(list("MZINB Full" = mzinb_full,
 
 # include deaths
 
-mzinb_deaths<- update(mzinb_full, . ~ . + log_deaths)
+mzinb_deaths <- glmmadmb(update(mnb_final_formula, . ~ . + log_deaths), 
+                         data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(mzinb_deaths)
 get_glmmadmb(mzinb_deaths)
 
 lrtest(mzinb_full, mzinb_deaths)
 
-
 ## Null models: MZINB vs MNB
 
-mzinb_null <- update(mzinb_full, . ~ 1 + (1 | state))
+mzinb_null <- glmmadmb(update(mnb_final_formula, . ~ 1 + (1 | state)), 
+                         data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(mzinb_null)
 get_glmmadmb(mzinb_null)
@@ -1872,7 +2088,11 @@ lrtest(mzinb_null, mnb_null)
 
 ## Null models: MZINB vs ZINB
 
-zinb_null <- update(zinb_full, . ~ 1)
+zinb_null <- glmmadmb(update(mnb_final_formula, . ~ 1), 
+                         data = enve_model,
+                       family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(zinb_null)
 get_glmmadmb(zinb_null)
@@ -1896,7 +2116,12 @@ Single level ZINB using glmmadmb
 
 lrtest(nb_final, zinb_full)
 
-zip_full <- update(mzip_full, . ~ . - (1 | state))
+zip_full <- glmmadmb(update(mnb_final_formula, . ~ . - (1 | state)), 
+                         data = enve_model,
+                       family = "poisson", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
+    
 summary(zip_full)
 get_glmmadmb(zip_full)
 
@@ -1906,8 +2131,10 @@ lrtest(nb_null, zinb_null)
 
 # no state
 
-zinb_no_state <- glmmadmb(formula(nb1), data = enve_model,
-                          family = "nbinom", zeroInflation = TRUE)
+zinb_no_state <- glmmadmb(nb1_formula, data = enve_model,
+                          family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(zinb_no_state)
 get_glmmadmb(zinb_no_state)
@@ -1916,8 +2143,10 @@ lrtest(nb1, zinb_no_state)
 
 # no business level measurements
 
-zinb_only_state <- glmmadmb(formula(nb_only_state), data = enve_model,
-                          family = "nbinom", zeroInflation = TRUE)
+zinb_only_state <- glmmadmb(nb_only_state_formula, data = enve_model,
+                          family = "nbinom", zeroInflation = TRUE,
+                       admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                       extra.args = "-ndi 60000")
 
 summary(zinb_only_state)
 get_glmmadmb(zinb_only_state)
@@ -1954,7 +2183,7 @@ summary(zinb_pscl_simple_full)
 
 lrtest(nb_final, zinb_pscl_simple_full)
 
-nb_mass_final <- glm.nb(formula(nb_final), data = enve_model)
+nb_mass_final <- glm.nb(nb_final_formula, data = enve_model)
 
 summary(nb_mass_final)
 
@@ -2061,22 +2290,24 @@ Compare:
 
 ```{r hurdle-models}
 
-binary_formula <- update(formula(mnb_final), extortion_victim ~ .)
+binary_formula <- update(mnb_final_formula, extortion_victim ~ .)
 
 # Full, equal variable, hurdle models
 
 ## Binary part first
 
-mlogit_full <- glmmadmb(binary_formula, data = enve_model,
-                        family = "binomial")
+mlogit_full <- model_failsafe(binary_formula, data = enve_model,
+                        family = "binomial", multilevel = TRUE)
 
 summary(mlogit_full)
 get_glmmadmb(mlogit_full)
 
 ## Count part
 
-mtnb_full <- glmmadmb(formula(mnb_final), data = enve_trunc,
-                      family = "truncnbinom")
+mtnb_full <- glmmadmb(mnb_final_formula, data = enve_trunc,
+                      family = "truncnbinom",
+                      admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                      extra.args = "-ndi 60000")
 
 summary(mtnb_full)
 get_glmmadmb(mtnb_full)
@@ -2097,14 +2328,21 @@ screenreg(list("MNB" = mnb_final,
 
 ## Binary part first
 
-logit_full <- update(mlogit_full, . ~ . - (1 | state))
+logit_full_formula <- update(binary_formula, . ~ . - (1 | state))
+
+logit_full <- model_failsafe(logit_full_formula, data = enve_model,
+                        family = "binomial", multilevel = FALSE)
 
 summary(logit_full)
 get_glmmadmb(logit_full)
 
 ## Count part
 
-tnb_full <- update(mtnb_full, . ~ . - (1 | state))
+tnb_full <- glmmadmb(update(mnb_final_formula, . ~ . - (1 | state)), 
+                     data = enve_trunc,
+                      family = "truncnbinom",
+                      admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                      extra.args = "-ndi 60000")
 
 summary(tnb_full)
 get_glmmadmb(tnb_full)
@@ -2129,8 +2367,10 @@ hurdle_compare(joint_ic(logit_full, tnb_full),
 
 # - Binary: state; Count: all vs. Full
 
-mlogit_state <- glmmadmb(formula(mnb_only_state), data = enve_model,
-                         family = "binomial")
+mlogit_state_formula <- update(mnb_only_state_formula, extortion_victim ~ .)
+
+mlogit_state <- model_failsafe(mlogit_state_formula, data = enve_model,
+                         family = "binomial", multilevel = TRUE)
 summary(mlogit_state)
 get_glmmadmb(mlogit_state)
 
@@ -2138,8 +2378,9 @@ lrtest(mlogit_state, mlogit_full)
 
 # - Binary: bus; Count: all vs. Full
 
-mlogit_bus <- glmmadmb(formula(mnb1), data = enve_model,
-                         family = "binomial")
+mlogit_bus <- model_failsafe(update(count_formula, extortion_victim ~ .), 
+                             data = enve_model,
+                         family = "binomial", multilevel = TRUE)
 summary(mlogit_bus)
 get_glmmadmb(mlogit_bus)
 
@@ -2147,8 +2388,10 @@ lrtest(mlogit_bus, mlogit_full)
 
 # - Binary: all; Count: bus vs. Full
 
-mtnb_bus <- glmmadmb(formula(mnb1), data = enve_trunc,
-                      family = "truncnbinom")
+mtnb_bus <- glmmadmb(count_formula, data = enve_trunc,
+                      family = "truncnbinom",
+                      admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                      extra.args = "-ndi 60000")
 
 summary(mtnb_bus)
 get_glmmadmb(mtnb_bus)
@@ -2158,8 +2401,10 @@ lrtest(mtnb_bus, mtnb_full)
 
 # - Binary: all; Count: state vs. Full
 
-mtnb_state <- glmmadmb(formula(mnb_only_state), data = enve_trunc,
-                      family = "truncnbinom")
+mtnb_state <- glmmadmb(mnb_only_state_formula, data = enve_trunc,
+                      family = "truncnbinom",
+                      admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                      extra.args = "-ndi 60000")
 
 summary(mtnb_state)
 get_glmmadmb(mtnb_state)
@@ -2169,7 +2414,11 @@ lrtest(mtnb_state, mtnb_full)
 
 # Binary with deaths
 
-mlogit_deaths <- update(mlogit_full, . ~ . + log_deaths)
+mlogit_deaths_formula <- update(binary_formula, . ~ . + log_deaths)
+
+mlogit_deaths <- model_failsafe(binary_formula, data = enve_model,
+                        family = "binomial", multilevel = TRUE)
+
 summary(mlogit_deaths)
 get_glmmadmb(mlogit_deaths)
 
@@ -2177,7 +2426,12 @@ lrtest(mlogit_full, mlogit_deaths)
 
 # count with deaths
 
-mtnb_deaths <- update(mtnb_full, . ~ . + log_deaths)
+mtnb_deaths_formula <- update(mnb_final_formula, . ~ . + log_deaths)
+
+mtnb_deaths <- glmmadmb(mtnb_deaths_formula, data = enve_trunc,
+                      family = "truncnbinom",
+                      admb.opts = admbControl(noinit = FALSE, shess=FALSE),
+                      extra.args = "-ndi 60000")
 
 summary(mtnb_deaths)
 get_glmmadmb(mtnb_deaths)
@@ -2194,6 +2448,120 @@ compare_hurdle2other(mlogit_deaths, mtnb_deaths, mnb_f_deaths)
 
 ```
 
+
+```{r hurdle-pscl}
+
+update.hurdle <- function(object, new, ...)
+{
+    call <- object$call
+    call$formula <- update(Formula::as.Formula(formula(object)), new)
+    eval.parent(call)
+}
+
+zi_formula <- as.formula(extortions ~
+                             bribes +
+                             yearsquant +
+                             subsector +
+                             size +
+                             log_pop +
+                             log_wpn_crim +
+                             log_bribe_vic +
+                             log_nbus +
+                             log_drug_crim +
+                             comp_index +
+                             law_index | 1)
+
+hurdle_pscl_simple_full <- hurdle(zi_formula, data = enve_model,
+                                  dist = "negbin")
+summary(hurdle_pscl_simple_full)
+
+lrtest(nb_final, hurdle_pscl_simple_full)
+
+nb_mass_final <- glm.nb(nb_final_formula, data = enve_model)
+
+summary(nb_mass_final)
+
+lrtest(nb_mass_final, hurdle_pscl_simple_full)
+vuong(nb_mass_final, hurdle_pscl_simple_full)
+
+zi_formula <- as.formula(extortions ~
+                             bribes +
+                             yearsquant +
+                             subsector +
+                             size +
+                             log_pop +
+                             log_wpn_crim +
+                             log_bribe_vic +
+                             log_nbus +
+                             log_drug_crim +
+                             comp_index +
+                             law_index |
+                             bribes +
+                             yearsquant +
+                             subsector +
+                             size +
+                             log_pop +
+                             log_wpn_crim +
+                             log_bribe_vic +
+                             log_nbus +
+                             log_drug_crim +
+                             comp_index +
+                             law_index)
+
+hurdle_pscl_full <- hurdle(zi_formula, data = enve_model,
+                                  dist = "negbin")
+summary(hurdle_pscl_full)
+
+lrtest(nb_final, hurdle_pscl_full)
+
+lrtest(hurdle_pscl_simple_full, hurdle_pscl_full)
+
+lrtest(nb_mass_final, hurdle_pscl_full)
+vuong(nb_mass_final, hurdle_pscl_full)
+
+## Constant on either side of equation
+
+hurdle_pscl_nullc <- update(hurdle_pscl_full, . ~ 1 | . )
+
+summary(hurdle_pscl_nullc)
+
+lrtest(hurdle_pscl_nullc, hurdle_pscl_full)
+vuong(hurdle_pscl_nullc, hurdle_pscl_full)
+
+hurdle_pscl_c_all_z_state <- update(hurdle_pscl_full, . ~ . | . - bribes -
+                             yearsquant -
+                             subsector -
+                             size )
+
+summary(hurdle_pscl_c_all_z_state)
+
+lrtest(hurdle_pscl_simple_full, hurdle_pscl_c_all_z_state)
+vuong(hurdle_pscl_simple_full, hurdle_pscl_c_all_z_state)
+
+hurdle_pscl_c_state_l_z_all <- update(hurdle_pscl_full, . ~ . - bribes -
+                             yearsquant -
+                             subsector -
+                             size | . )
+
+summary(hurdle_pscl_c_state_l_z_all)
+
+lrtest(hurdle_pscl_simple_full, hurdle_pscl_c_state_l_z_all)
+vuong(hurdle_pscl_simple_full, hurdle_pscl_c_state_l_z_all)
+
+
+screenreg(list("Hurdle Full" = hurdle_pscl_full,
+               "Count: Null" = hurdle_pscl_nullc,
+               "Logit: Null" = hurdle_pscl_simple_full,
+               "Logit: state" = hurdle_pscl_c_all_z_state,
+               "Count: state" = hurdle_pscl_c_state_l_z_all),
+          single.row = TRUE)
+
+
+
+
+```
+
+# The end
 
 ```{r endtime}
 endtime <- proc.time()
