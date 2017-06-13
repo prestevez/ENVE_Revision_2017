@@ -9,16 +9,6 @@ output:
 pandoc_args: "--smart"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      comment="",
-                      cache=TRUE,
-                      dev=c("png", "CairoPDF"),
-                      error=TRUE,
-                      fig.width=4, fig.height=3)
-options(knitr.kable.NA = '--')
-```
-
 # Introduction
 
 Script to analyze patterns of extortion victimization against Mexican businesses.
@@ -63,9 +53,17 @@ library(lmtest)
 library(car)
 library(pscl)
 sessionInfo()
-
 ```
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      comment="",
+                      cache=TRUE,
+                      dev=c("png", "CairoPDF"),
+                      error=TRUE,
+                      fig.width=4, fig.height=3)
+options(knitr.kable.NA = '--')
+```
 
 
 ## Data input
@@ -1075,10 +1073,10 @@ enve_final %>%
 
 ##### Comment out before sending #####
 
-enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
-
-
-enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
+# enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
+# 
+# 
+# enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
 
 ##### Comment out before sending #####
 
@@ -1687,7 +1685,7 @@ get_glmmadmb(mnb22)
 
 mnb23_formula <- update(mnb22_formula, . ~ . - log_drug_crim)
 
-mnb22 <- model_failsafe(mnb23_formula,
+mnb23 <- model_failsafe(mnb23_formula,
                       data = enve_model,
                       family = "nbinom", multilevel = TRUE)
 
