@@ -1073,10 +1073,10 @@ enve_final %>%
 
 ##### Comment out before sending #####
 
-# enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
-# 
-# 
-# enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
+enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
+
+
+enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
 
 ##### Comment out before sending #####
 
@@ -1192,6 +1192,7 @@ mnb1 <- model_failsafe(formula = count_formula,
                        family = "nbinom")
 
 summary(mnb1)
+confint(mnb1)
 
 get_glmmadmb(mnb1)
 
@@ -1203,6 +1204,7 @@ mp1 <- model_failsafe(count_formula,
 
 
 summary(mp1)
+confint(mp1)
 
 get_glmmadmb(mp1)
 
@@ -1220,6 +1222,7 @@ nb1 <- model_failsafe(nb1_formula,
                       family = "nbinom", multilevel = FALSE)
 
 summary(nb1)
+confint(nb1)
 
 get_glmmadmb(nb1)
 
@@ -1280,6 +1283,7 @@ mnb2 <- model_failsafe(mnb2_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb2)
+confint(mnb2)
 
 get_glmmadmb(mnb2)
 
@@ -1299,6 +1303,7 @@ mnb3 <-  model_failsafe(mnb3_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb3)
+confint(mnb3)
 get_glmmadmb(mnb3)
 
 lrtest(mnb1, mnb3)
@@ -1318,6 +1323,7 @@ mnb4 <- model_failsafe(mnb4_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb4)
+confint(mnb4)
 get_glmmadmb(mnb4)
 
 lrtest(mnb1, mnb4, mnb3)
@@ -1337,6 +1343,7 @@ mnb5 <- model_failsafe(mnb5_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb5)
+confint(mnb5)
 get_glmmadmb(mnb5)
 
 lrtest(mnb1, mnb5, mnb3)
@@ -1365,6 +1372,7 @@ mnb6 <- model_failsafe(mnb6_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb6)
+confint(mnb6)
 get_glmmadmb(mnb6)
 
 vif(mnb6)
@@ -1381,6 +1389,7 @@ mnb7 <- model_failsafe(mnb7_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb7)
+confint(mnb7)
 get_glmmadmb(mnb7)
 
 vif(mnb7)
@@ -1399,6 +1408,7 @@ mnb8 <- model_failsafe(mnb8_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb8)
+confint(mnb8)
 get_glmmadmb(mnb8)
 
 vif(mnb8)
@@ -1412,6 +1422,7 @@ mnb9 <- model_failsafe(mnb9_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb9)
+confint(mnb9)
 get_glmmadmb(mnb9)
 
 vif(mnb9)
@@ -1423,6 +1434,7 @@ mnb10 <- model_failsafe(mnb10_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb10)
+confint(mnb10)
 get_glmmadmb(mnb10)
 
 vif(mnb10)
@@ -1453,6 +1465,7 @@ mnb11 <- model_failsafe(mnb11_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb11)
+confint(mnb11)
 get_glmmadmb(mnb11)
 
 vif(mnb11)
@@ -1467,6 +1480,7 @@ mnb12 <- model_failsafe(mnb12_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb12)
+confint(mnb12)
 get_glmmadmb(mnb12)
 
 vif(mnb12)
@@ -1495,6 +1509,7 @@ mnb13 <- model_failsafe(mnb13_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb13)
+confint(mnb13)
 get_glmmadmb(mnb13)
 
 vif(mnb13)
@@ -1508,6 +1523,7 @@ mnb14 <- model_failsafe(mnb14_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb14)
+confint(mnb14)
 get_glmmadmb(mnb14)
 
 vif(mnb14)
@@ -1526,6 +1542,7 @@ mnb15 <- model_failsafe(mnb15_formula,
 
 
 summary(mnb15)
+confint(mnb15)
 get_glmmadmb(mnb15)
 
 vif(mnb15)
@@ -1549,6 +1566,7 @@ mnb16 <- model_failsafe(mnb16_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb16)
+confint(mnb16)
 get_glmmadmb(mnb16)
 
 vif(mnb16)
@@ -1579,6 +1597,7 @@ mnb17 <- model_failsafe(mnb17_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb17)
+confint(mnb17)
 get_glmmadmb(mnb17)
 
 vif(mnb17)
@@ -1590,6 +1609,7 @@ mnb18 <- model_failsafe(mnb18_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb18)
+confint(mnb18)
 get_glmmadmb(mnb18)
 
 vif(mnb18)
@@ -1618,6 +1638,7 @@ mnb19 <- model_failsafe(mnb19_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb19)
+confint(mnb19)
 get_glmmadmb(mnb19)
 
 lrtest(mnb19, mnb16)
@@ -1643,6 +1664,7 @@ mnb20 <- model_failsafe(mnb20_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb20)
+confint(mnb20)
 get_glmmadmb(mnb20)
 vif(mnb20)
 
@@ -1661,6 +1683,7 @@ mnb21 <- model_failsafe(mnb21_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb21)
+confint(mnb21)
 get_glmmadmb(mnb21)
 
 vif(mnb21)
@@ -1681,6 +1704,7 @@ mnb22 <- model_failsafe(mnb22_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb22)
+confint(mnb22)
 get_glmmadmb(mnb22)
 
 mnb23_formula <- update(mnb22_formula, . ~ . - log_drug_crim)
@@ -1688,6 +1712,10 @@ mnb23_formula <- update(mnb22_formula, . ~ . - log_drug_crim)
 mnb23 <- model_failsafe(mnb23_formula,
                       data = enve_model,
                       family = "nbinom", multilevel = TRUE)
+
+summary(mnb23)
+confint(mnb23)
+get_glmmadmb(mnb23)
 
 lrtest(mnb23, mnb22, mnb21)
 
@@ -1700,6 +1728,7 @@ mnb24 <- model_failsafe(mnb24_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb24)
+confint(mnb24)
 get_glmmadmb(mnb24)
 
 vif(mnb24)
@@ -1718,6 +1747,7 @@ mnb25 <- model_failsafe(mnb25_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb25)
+confint(mnb25)
 get_glmmadmb(mnb25)
 
 vif(mnb25)
@@ -1729,6 +1759,7 @@ mnb26 <- model_failsafe(mnb26_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb26)
+confint(mnb26)
 get_glmmadmb(mnb26)
 
 lrtest(mnb25, mnb20)
@@ -1762,6 +1793,7 @@ mnb27 <- model_failsafe(mnb27_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb27)
+confint(mnb27)
 get_glmmadmb(mnb27)
 
 lrtest(mnb20, mnb27)
@@ -1782,6 +1814,7 @@ mnb28 <- model_failsafe(mnb28_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb28)
+confint(mnb28)
 get_glmmadmb(mnb28)
 
 lrtest(mnb27, mnb28)
@@ -1804,6 +1837,7 @@ mnb29 <- model_failsafe(mnb29_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb29)
+confint(mnb29)
 get_glmmadmb(mnb29)
 
 lrtest(mnb20, mnb29)
@@ -1824,6 +1858,7 @@ mnb30 <- model_failsafe(mnb30_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb30)
+confint(mnb30)
 get_glmmadmb(mnb30)
 
 lrtest(mnb28, mnb30)
@@ -1860,6 +1895,7 @@ mnb_final <- mnb28
 mnb_final_formula <- mnb28_formula
 
 summary(mnb_final)
+confint(mnb_final)
 get_glmmadmb(mnb_final)
 
 vif(mnb_final)
@@ -1884,6 +1920,7 @@ nb_final <- model_failsafe(nb_final_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(nb_final)
+confint(nb_final)
 get_glmmadmb(nb_final)
 
 lrtest(nb_final, mnb_final)
@@ -1908,6 +1945,7 @@ mnb_only_state <- model_failsafe(mnb_only_state_formula,
 
 
 summary(mnb_only_state)
+confint(mnb_only_state)
 get_glmmadmb(mnb_only_state)
 
 nb_only_state_formula <- update(mnb_only_state_formula, . ~ . - (1 | state))
@@ -1917,6 +1955,7 @@ nb_only_state <- model_failsafe(nb_only_state_formula,
                       family = "nbinom", multilevel = FALSE)
 
 summary(nb_only_state)
+confint(nb_only_state)
 get_glmmadmb(nb_only_state)
 
 lrtest(nb_only_state, mnb_only_state)
@@ -1937,6 +1976,7 @@ mnb_noc <- model_failsafe(mnb_noc_formula,
                       family = "nbinom", multilevel = TRUE)
 
 summary(mnb_noc)
+confint(mnb_noc)
 get_glmmadmb(mnb_noc)
 
 vif(mnb_noc)
@@ -1963,6 +2003,7 @@ mnb_f_deaths <- model_failsafe(mnb_f_deaths_formula,
 
 
 summary(mnb_f_deaths)
+confint(mnb_f_deaths)
 get_glmmadmb(mnb_f_deaths)
 
 lrtest(mnb_final, mnb_f_deaths)
@@ -1985,6 +2026,7 @@ mp_final <- model_failsafe(mnb_final_formula,
                       family = "poisson", multilevel = TRUE)
 
 summary(mp_final)
+confint(mp_final)
 get_glmmadmb(mp_final)
 
 lrtest(mp_final, mnb_final)
@@ -2011,6 +2053,7 @@ mzinb_full <- glmmadmb(mnb_final_formula, data = enve_model,
                        extra.args = "-ndi 60000")
 
 summary(mzinb_full)
+confint(mzinb_full)
 get_glmmadmb(mzinb_full)
 
 lrtest(mnb_final, mzinb_full)
@@ -2021,6 +2064,7 @@ mzip_full <- glmmadmb(mnb_final_formula, data = enve_model,
                        extra.args = "-ndi 60000")
 
 summary(mzip_full)
+confint(mzip_full)
 get_glmmadmb(mzip_full)
 
 lrtest(mzip_full, mzinb_full)
@@ -2033,6 +2077,7 @@ zinb_full <- glmmadmb(zinb_full_formula, data = enve_model,
                        extra.args = "-ndi 60000")
 
 summary(zinb_full)
+confint(zinb_full)
 get_glmmadmb(zinb_full)
 
 lrtest(zinb_full, mzinb_full)
@@ -2052,6 +2097,7 @@ mzinb_no_state <- glmmadmb(count_formula, data = enve_model,
                        extra.args = "-ndi 60000")
 
 summary(mzinb_no_state)
+confint(mzinb_no_state)
 get_glmmadmb(mzinb_no_state)
 
 lrtest(mzinb_no_state, mzinb_full)
@@ -2064,6 +2110,7 @@ mzinb_only_state <- glmmadmb(mnb_only_state_formula, data = enve_model,
                        extra.args = "-ndi 60000")
 
 summary(mzinb_only_state)
+confint(mzinb_only_state)
 get_glmmadmb(mzinb_only_state)
 
 lrtest(mzinb_only_state, mzinb_full)
@@ -2082,6 +2129,7 @@ mzinb_deaths <- glmmadmb(update(mnb_final_formula, . ~ . + log_deaths),
                        extra.args = "-ndi 60000")
 
 summary(mzinb_deaths)
+confint(mzinb_deaths)
 get_glmmadmb(mzinb_deaths)
 
 lrtest(mzinb_full, mzinb_deaths)
@@ -2136,6 +2184,7 @@ zip_full <- glmmadmb(update(mnb_final_formula, . ~ . - (1 | state)),
                        extra.args = "-ndi 60000")
     
 summary(zip_full)
+confint(zip_full)
 get_glmmadmb(zip_full)
 
 lrtest(zip_full, zinb_full)
@@ -2150,6 +2199,7 @@ zinb_no_state <- glmmadmb(nb1_formula, data = enve_model,
                        extra.args = "-ndi 60000")
 
 summary(zinb_no_state)
+confint(zinb_no_state)
 get_glmmadmb(zinb_no_state)
 
 lrtest(nb1, zinb_no_state)
@@ -2162,6 +2212,7 @@ zinb_only_state <- glmmadmb(nb_only_state_formula, data = enve_model,
                        extra.args = "-ndi 60000")
 
 summary(zinb_only_state)
+confint(zinb_only_state)
 get_glmmadmb(zinb_only_state)
 
 lrtest(nb_only_state, zinb_only_state)
@@ -2193,12 +2244,14 @@ zi_formula <- as.formula(extortions ~
 zinb_pscl_simple_full <- zeroinfl(zi_formula, data = enve_model,
                                   dist = "negbin")
 summary(zinb_pscl_simple_full)
+confint(zinb_pscl_simple_full)
 
 lrtest(nb_final, zinb_pscl_simple_full)
 
 nb_mass_final <- glm.nb(nb_final_formula, data = enve_model)
 
 summary(nb_mass_final)
+confint(nb_mass_final)
 
 lrtest(nb_mass_final, zinb_pscl_simple_full)
 vuong(nb_mass_final, zinb_pscl_simple_full)
@@ -2230,6 +2283,7 @@ zi_formula <- as.formula(extortions ~
 zinb_pscl_full <- zeroinfl(zi_formula, data = enve_model,
                                   dist = "negbin")
 summary(zinb_pscl_full)
+confint(zinb_pscl_full)
 
 lrtest(nb_final, zinb_pscl_full)
 
@@ -2243,6 +2297,8 @@ vuong(nb_mass_final, zinb_pscl_full)
 zinb_pscl_nullc <- update(zinb_pscl_full, . ~ 1 | . )
 
 summary(zinb_pscl_nullc)
+confint(zinb_pscl_nullc)
+
 
 lrtest(zinb_pscl_nullc, zinb_pscl_full)
 vuong(zinb_pscl_nullc, zinb_pscl_full)
@@ -2253,6 +2309,7 @@ zinb_pscl_c_all_z_state <- update(zinb_pscl_full, . ~ . | . - bribes -
                              size )
 
 summary(zinb_pscl_c_all_z_state)
+confint(zinb_pscl_c_all_z_state)
 
 lrtest(zinb_pscl_simple_full, zinb_pscl_c_all_z_state)
 vuong(zinb_pscl_simple_full, zinb_pscl_c_all_z_state)
@@ -2263,6 +2320,7 @@ zinb_pscl_c_state_l_z_all <- update(zinb_pscl_full, . ~ . - bribes -
                              size | . )
 
 summary(zinb_pscl_c_state_l_z_all)
+confint(zinb_pscl_c_state_l_z_all)
 
 lrtest(zinb_pscl_simple_full, zinb_pscl_c_state_l_z_all)
 vuong(zinb_pscl_simple_full, zinb_pscl_c_state_l_z_all)
@@ -2313,6 +2371,7 @@ mlogit_full <- model_failsafe(binary_formula, data = enve_model,
                         family = "binomial", multilevel = TRUE)
 
 summary(mlogit_full)
+confint(mlogit_full)
 get_glmmadmb(mlogit_full)
 
 ## Count part
@@ -2323,6 +2382,7 @@ mtnb_full <- glmmadmb(mnb_final_formula, data = enve_trunc,
                       extra.args = "-ndi 60000")
 
 summary(mtnb_full)
+confint(mtnb_full)
 get_glmmadmb(mtnb_full)
 
 
@@ -2347,6 +2407,7 @@ logit_full <- model_failsafe(logit_full_formula, data = enve_model,
                         family = "binomial", multilevel = FALSE)
 
 summary(logit_full)
+confint(logit_full)
 get_glmmadmb(logit_full)
 
 ## Count part
@@ -2358,6 +2419,7 @@ tnb_full <- glmmadmb(update(mnb_final_formula, . ~ . - (1 | state)),
                       extra.args = "-ndi 60000")
 
 summary(tnb_full)
+confint(tnb_full)
 get_glmmadmb(tnb_full)
 
 
@@ -2385,6 +2447,7 @@ mlogit_state_formula <- update(mnb_only_state_formula, extortion_victim ~ .)
 mlogit_state <- model_failsafe(mlogit_state_formula, data = enve_model,
                          family = "binomial", multilevel = TRUE)
 summary(mlogit_state)
+confint(mlogit_state)
 get_glmmadmb(mlogit_state)
 
 lrtest(mlogit_state, mlogit_full)
@@ -2395,6 +2458,7 @@ mlogit_bus <- model_failsafe(update(count_formula, extortion_victim ~ .),
                              data = enve_model,
                          family = "binomial", multilevel = TRUE)
 summary(mlogit_bus)
+confint(mlogit_bus)
 get_glmmadmb(mlogit_bus)
 
 lrtest(mlogit_bus, mlogit_full)
@@ -2407,6 +2471,7 @@ mtnb_bus <- glmmadmb(count_formula, data = enve_trunc,
                       extra.args = "-ndi 60000")
 
 summary(mtnb_bus)
+confint(mtnb_bus)
 get_glmmadmb(mtnb_bus)
 
 lrtest(mtnb_bus, mtnb_full)
@@ -2420,6 +2485,7 @@ mtnb_state <- glmmadmb(mnb_only_state_formula, data = enve_trunc,
                       extra.args = "-ndi 60000")
 
 summary(mtnb_state)
+confint(mtnb_state)
 get_glmmadmb(mtnb_state)
 
 lrtest(mtnb_state, mtnb_full)
@@ -2433,6 +2499,7 @@ mlogit_deaths <- model_failsafe(binary_formula, data = enve_model,
                         family = "binomial", multilevel = TRUE)
 
 summary(mlogit_deaths)
+confint(mlogit_deaths)
 get_glmmadmb(mlogit_deaths)
 
 lrtest(mlogit_full, mlogit_deaths)
@@ -2447,6 +2514,7 @@ mtnb_deaths <- glmmadmb(mtnb_deaths_formula, data = enve_trunc,
                       extra.args = "-ndi 60000")
 
 summary(mtnb_deaths)
+confint(mtnb_deaths)
 get_glmmadmb(mtnb_deaths)
 
 lrtest(mtnb_full, mtnb_deaths)
@@ -2487,12 +2555,9 @@ zi_formula <- as.formula(extortions ~
 hurdle_pscl_simple_full <- hurdle(zi_formula, data = enve_model,
                                   dist = "negbin")
 summary(hurdle_pscl_simple_full)
+confint(hurdle_pscl_simple_full)
 
 lrtest(nb_final, hurdle_pscl_simple_full)
-
-nb_mass_final <- glm.nb(nb_final_formula, data = enve_model)
-
-summary(nb_mass_final)
 
 lrtest(nb_mass_final, hurdle_pscl_simple_full)
 vuong(nb_mass_final, hurdle_pscl_simple_full)
@@ -2524,6 +2589,7 @@ zi_formula <- as.formula(extortions ~
 hurdle_pscl_full <- hurdle(zi_formula, data = enve_model,
                                   dist = "negbin")
 summary(hurdle_pscl_full)
+confint(hurdle_pscl_full)
 
 lrtest(nb_final, hurdle_pscl_full)
 
@@ -2537,6 +2603,7 @@ vuong(nb_mass_final, hurdle_pscl_full)
 hurdle_pscl_nullc <- update(hurdle_pscl_full, . ~ 1 | . )
 
 summary(hurdle_pscl_nullc)
+confint(hurdle_pscl_nullc)
 
 lrtest(hurdle_pscl_nullc, hurdle_pscl_full)
 vuong(hurdle_pscl_nullc, hurdle_pscl_full)
@@ -2547,6 +2614,7 @@ hurdle_pscl_c_all_z_state <- update(hurdle_pscl_full, . ~ . | . - bribes -
                              size )
 
 summary(hurdle_pscl_c_all_z_state)
+confint(hurdle_pscl_c_all_z_state)
 
 lrtest(hurdle_pscl_simple_full, hurdle_pscl_c_all_z_state)
 vuong(hurdle_pscl_simple_full, hurdle_pscl_c_all_z_state)
@@ -2556,7 +2624,7 @@ hurdle_pscl_c_state_l_z_all <- update(hurdle_pscl_full, . ~ . - bribes -
                              subsector -
                              size | . )
 
-summary(hurdle_pscl_c_state_l_z_all)
+confint(hurdle_pscl_c_state_l_z_all)
 
 lrtest(hurdle_pscl_simple_full, hurdle_pscl_c_state_l_z_all)
 vuong(hurdle_pscl_simple_full, hurdle_pscl_c_state_l_z_all)
