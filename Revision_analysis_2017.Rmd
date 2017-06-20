@@ -1073,10 +1073,10 @@ enve_final %>%
 
 ##### Comment out before sending #####
 
-enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
-
-
-enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
+# enve_model$extortions[which(enve_model$subsector == "Other")] <- rpois(10,1)
+# 
+# 
+# enve_model$extortions[which(enve_model$subsector == "Media")] <- rpois(45, 0.5)
 
 ##### Comment out before sending #####
 
